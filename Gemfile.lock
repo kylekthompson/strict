@@ -39,7 +39,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  gem-release
+  gem-release (~> 2.2)
   minitest (~> 5.0)
   rake (~> 13.0)
   rubocop (~> 1.21)
