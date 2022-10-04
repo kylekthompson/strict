@@ -2,10 +2,10 @@
 
 require "test_helper"
 
-describe Strict::Matchers::Anything do
+describe Strict::Validators::Anything do
   describe "#===" do
-    it "matches anything" do
-      anything = Strict::Matchers::Anything.instance
+    it "validates anything" do
+      anything = Strict::Validators::Anything.instance
       assert anything === 1
       assert anything === true
       assert anything === {}

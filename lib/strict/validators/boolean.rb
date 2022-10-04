@@ -3,7 +3,7 @@
 require "singleton"
 
 module Strict
-  module Matchers
+  module Validators
     class Boolean
       include Singleton
 

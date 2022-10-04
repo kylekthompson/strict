@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
 module Strict
-  module Matchers
+  module Validators
     class RangeOf
-      attr_reader :element_matcher
+      attr_reader :element_validator
 
-      def initialize(element_matcher)
-        @element_matcher = element_matcher
+      def initialize(element_validator)
+        @element_validator = element_validator
       end
 
       def ===(value)
         Range === value && [value.begin, value.end].compact.all? do |v|
-          element_matcher === v
+          element_validator === v
         end
       end
     end
