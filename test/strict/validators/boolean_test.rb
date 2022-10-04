@@ -2,21 +2,21 @@
 
 require "test_helper"
 
-describe Strict::Matchers::Boolean do
+describe Strict::Validators::Boolean do
   describe "#===" do
     before do
-      @boolean = Strict::Matchers::Boolean.instance
+      @boolean = Strict::Validators::Boolean.instance
     end
 
-    it "matches true" do
+    it "validates true" do
       assert @boolean === true
     end
 
-    it "matches false" do
+    it "validates false" do
       assert @boolean === false
     end
 
-    it "does not match objects that are not booleans" do
+    it "does not validate objects that are not booleans" do
       refute @boolean === 1
       refute @boolean === "string"
     end
