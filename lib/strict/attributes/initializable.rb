@@ -9,7 +9,7 @@ module Strict
         invalid_attributes = nil
         missing_attributes = nil
 
-        self.class.strict_attributes_recipe.attributes.each do |attribute|
+        self.class.strict_attributes.each do |attribute|
           if remaining_attributes.delete?(attribute.name)
             value = attributes.fetch(attribute.name)
           elsif attribute.optional?

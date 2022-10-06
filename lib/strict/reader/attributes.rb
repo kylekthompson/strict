@@ -5,10 +5,10 @@ module Strict
     module Attributes
       def attributes(&block)
         block ||= -> {}
-        recipe = Strict::Attributes::Dsl.run(&block)
-        include Module.new(recipe)
+        configuration = Strict::Attributes::Dsl.run(&block)
+        include Module.new(configuration)
         include Strict::Attributes::Initializable
-        extend ClassMethods
+        extend Strict::Attributes::Configured
       end
     end
   end

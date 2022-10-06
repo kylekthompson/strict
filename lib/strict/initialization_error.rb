@@ -28,7 +28,7 @@ module Strict
       return nil unless invalid_attributes
 
       details = invalid_attributes.map do |attribute, value|
-        "    - '#{attribute.name}': got #{value.inspect}, expected #{attribute.validator.inspect}"
+        "    - #{attribute.name}: got #{value.inspect}, expected #{attribute.validator.inspect}"
       end.join("\n")
 
       "  Some attributes were invalid:\n#{details}"
@@ -38,7 +38,7 @@ module Strict
       return nil unless missing_attributes
 
       details = missing_attributes.map do |attribute_name|
-        "    - '#{attribute_name}'"
+        "    - #{attribute_name}"
       end.join("\n")
 
       "  Some attributes were missing:\n#{details}"
@@ -48,7 +48,7 @@ module Strict
       return nil if remaining_attributes.none?
 
       details = remaining_attributes.map do |attribute_name|
-        "    - '#{attribute_name}'"
+        "    - #{attribute_name}"
       end.join("\n")
 
       "  Some attributes were provided, but not defined:\n#{details}"
