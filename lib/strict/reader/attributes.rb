@@ -7,7 +7,7 @@ module Strict
         block ||= -> {}
         configuration = Strict::Attributes::Dsl.run(&block)
         include Module.new(configuration)
-        include Strict::Attributes::Initializable
+        include Strict::Attributes::Instance
         extend Strict::Attributes::Configured
       end
     end
