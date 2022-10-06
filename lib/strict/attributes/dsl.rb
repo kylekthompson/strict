@@ -7,18 +7,19 @@ module Strict
         def run(&)
           dsl = new
           dsl.instance_eval(&)
-          ::Strict::Attributes::Configuration.new(attributes: dsl.__strict_dsl_internal_attributes)
+          ::Strict::Attributes::Configuration.new(attributes: dsl.__strict_dsl_internal_attributes.values)
         end
       end
 
       attr_reader :__strict_dsl_internal_attributes
 
       def initialize
-        @__strict_dsl_internal_attributes = []
+        @__strict_dsl_internal_attributes = {}
       end
 
       def strict_attribute(*args, **kwargs)
-        __strict_dsl_internal_attributes << ::Strict::Attribute.make(*args, **kwargs)
+        attribute = ::Strict::Attribute.make(*args, **kwargs)
+        __strict_dsl_internal_attributes[attribute.name] = attribute
         nil
       end
 
