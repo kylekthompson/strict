@@ -14,6 +14,11 @@ module Strict
           element_validator === v
         end
       end
+
+      def inspect
+        "ArrayOf(#{element_validator.inspect})"
+      end
+      alias to_s inspect
     end
   end
 end

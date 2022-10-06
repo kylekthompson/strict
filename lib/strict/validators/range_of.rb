@@ -14,6 +14,11 @@ module Strict
           element_validator === v
         end
       end
+
+      def inspect
+        "RangeOf(#{element_validator.inspect})"
+      end
+      alias to_s inspect
     end
   end
 end
