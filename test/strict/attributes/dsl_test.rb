@@ -24,31 +24,30 @@ describe Strict::Attributes::Dsl do
         hash_of HashOf(Integer => String)
         range_of RangeOf(Numeric)
       end
-      attributes = configuration.attributes.to_h { |a| [a.name, a] }
 
-      assert_equal Strict::Validators::Anything.instance, attributes.fetch(:no_arguments).validator
-      refute_nil attributes.fetch(:_underscore_identifier)
-      refute_nil attributes.fetch(:question?)
-      refute_nil attributes.fetch(:unsafe!)
-      assert_equal 1, attributes.fetch(:default_with_value).default_generator.call
-      assert_equal 1, attributes.fetch(:default_with_callable).default_generator.call
-      assert_equal 1, attributes.fetch(:default_value).default_generator.call
-      assert_equal 1, attributes.fetch(:default_generator).default_generator.call
-      assert_equal "coerced value", attributes.fetch(:coerce).coerce(
+      assert_equal Strict::Validators::Anything.instance, configuration.named!(:no_arguments).validator
+      refute_nil configuration.named!(:_underscore_identifier)
+      refute_nil configuration.named!(:question?)
+      refute_nil configuration.named!(:unsafe!)
+      assert_equal 1, configuration.named!(:default_with_value).default_generator.call
+      assert_equal 1, configuration.named!(:default_with_callable).default_generator.call
+      assert_equal 1, configuration.named!(:default_value).default_generator.call
+      assert_equal 1, configuration.named!(:default_generator).default_generator.call
+      assert_equal "coerced value", configuration.named!(:coerce).coerce(
         "value",
         for_class: Module.new { def self.coerce_coerce(value) = "coerced #{value}" }
       )
-      assert_equal "coerced value", attributes.fetch(:coerce_method).coerce(
+      assert_equal "coerced value", configuration.named!(:coerce_method).coerce(
         "value",
         for_class: Module.new { def self.some_method(value) = "coerced #{value}" }
       )
-      assert_equal Strict::Validators::AllOf, attributes.fetch(:all_of).validator.class
-      assert_equal Strict::Validators::AnyOf, attributes.fetch(:any_of).validator.class
-      assert_equal Strict::Validators::Anything, attributes.fetch(:anything).validator.class
-      assert_equal Strict::Validators::ArrayOf, attributes.fetch(:array_of).validator.class
-      assert_equal Strict::Validators::Boolean, attributes.fetch(:boolean).validator.class
-      assert_equal Strict::Validators::HashOf, attributes.fetch(:hash_of).validator.class
-      assert_equal Strict::Validators::RangeOf, attributes.fetch(:range_of).validator.class
+      assert_equal Strict::Validators::AllOf, configuration.named!(:all_of).validator.class
+      assert_equal Strict::Validators::AnyOf, configuration.named!(:any_of).validator.class
+      assert_equal Strict::Validators::Anything, configuration.named!(:anything).validator.class
+      assert_equal Strict::Validators::ArrayOf, configuration.named!(:array_of).validator.class
+      assert_equal Strict::Validators::Boolean, configuration.named!(:boolean).validator.class
+      assert_equal Strict::Validators::HashOf, configuration.named!(:hash_of).validator.class
+      assert_equal Strict::Validators::RangeOf, configuration.named!(:range_of).validator.class
     end
 
     it "allows overwriting attributes" do
@@ -57,8 +56,8 @@ describe Strict::Attributes::Dsl do
         foo Integer
       end
 
-      assert_equal %i[foo foo], configuration.attributes.map(&:name)
-      assert_equal [String, Integer], configuration.attributes.map(&:validator)
+      assert_equal %i[foo], configuration.map(&:name)
+      assert_equal [Integer], configuration.map(&:validator)
     end
 
     it "allows manually creating attributes" do
@@ -66,7 +65,7 @@ describe Strict::Attributes::Dsl do
         strict_attribute :if
       end
 
-      assert_equal [:if], configuration.attributes.map(&:name)
+      assert_equal [:if], configuration.map(&:name)
     end
   end
 end
