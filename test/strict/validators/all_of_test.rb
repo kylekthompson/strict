@@ -33,4 +33,18 @@ describe Strict::Validators::AllOf do
       refute all_of === @value
     end
   end
+
+  describe "#to_s" do
+    it "is meaningful" do
+      all_of = Strict::Validators::AllOf.new(1, "2", nil, Integer)
+      assert_equal "AllOf(1, \"2\", nil, Integer)", all_of.to_s
+    end
+  end
+
+  describe "#inspect" do
+    it "is meaningful" do
+      all_of = Strict::Validators::AllOf.new(1, "2", nil, Integer)
+      assert_equal "AllOf(1, \"2\", nil, Integer)", all_of.inspect
+    end
+  end
 end

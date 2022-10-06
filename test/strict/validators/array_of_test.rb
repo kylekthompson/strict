@@ -24,4 +24,18 @@ describe Strict::Validators::ArrayOf do
       refute @array_of === (0..10)
     end
   end
+
+  describe "#to_s" do
+    it "is meaningful" do
+      array_of = Strict::Validators::ArrayOf.new("2")
+      assert_equal "ArrayOf(\"2\")", array_of.to_s
+    end
+  end
+
+  describe "#inspect" do
+    it "is meaningful" do
+      array_of = Strict::Validators::ArrayOf.new("2")
+      assert_equal "ArrayOf(\"2\")", array_of.inspect
+    end
+  end
 end

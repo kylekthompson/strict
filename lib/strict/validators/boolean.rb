@@ -10,6 +10,11 @@ module Strict
       def ===(value)
         value.equal?(true) || value.equal?(false)
       end
+
+      def inspect
+        "Boolean()"
+      end
+      alias to_s inspect
     end
   end
 end

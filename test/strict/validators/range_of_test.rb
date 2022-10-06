@@ -44,4 +44,18 @@ describe Strict::Validators::RangeOf do
       refute @range_of === [0, 1, 2, 3, 4]
     end
   end
+
+  describe "#to_s" do
+    it "is meaningful" do
+      range_of = Strict::Validators::RangeOf.new("2")
+      assert_equal "RangeOf(\"2\")", range_of.to_s
+    end
+  end
+
+  describe "#inspect" do
+    it "is meaningful" do
+      range_of = Strict::Validators::RangeOf.new("2")
+      assert_equal "RangeOf(\"2\")", range_of.inspect
+    end
+  end
 end

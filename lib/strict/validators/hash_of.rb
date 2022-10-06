@@ -15,6 +15,11 @@ module Strict
           key_validator === k && value_validator === v
         end
       end
+
+      def inspect
+        "HashOf(#{key_validator.inspect} => #{value_validator.inspect})"
+      end
+      alias to_s inspect
     end
   end
 end

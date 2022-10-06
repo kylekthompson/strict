@@ -29,4 +29,18 @@ describe Strict::Validators::HashOf do
       refute @hash_of === [[1, "one"]]
     end
   end
+
+  describe "#to_s" do
+    it "is meaningful" do
+      hash_of = Strict::Validators::HashOf.new("2", "3")
+      assert_equal "HashOf(\"2\" => \"3\")", hash_of.to_s
+    end
+  end
+
+  describe "#inspect" do
+    it "is meaningful" do
+      hash_of = Strict::Validators::HashOf.new("2", "3")
+      assert_equal "HashOf(\"2\" => \"3\")", hash_of.inspect
+    end
+  end
 end

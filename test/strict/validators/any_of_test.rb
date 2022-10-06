@@ -33,4 +33,18 @@ describe Strict::Validators::AnyOf do
       refute any_of === @value
     end
   end
+
+  describe "#to_s" do
+    it "is meaningful" do
+      any_of = Strict::Validators::AnyOf.new(1, "2", nil, Integer)
+      assert_equal "AnyOf(1, \"2\", nil, Integer)", any_of.to_s
+    end
+  end
+
+  describe "#inspect" do
+    it "is meaningful" do
+      any_of = Strict::Validators::AnyOf.new(1, "2", nil, Integer)
+      assert_equal "AnyOf(1, \"2\", nil, Integer)", any_of.inspect
+    end
+  end
 end

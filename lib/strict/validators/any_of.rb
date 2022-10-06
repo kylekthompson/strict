@@ -14,6 +14,11 @@ module Strict
           subvalidator === value
         end
       end
+
+      def inspect
+        "AnyOf(#{subvalidators.map(&:inspect).join(', ')})"
+      end
+      alias to_s inspect
     end
   end
 end

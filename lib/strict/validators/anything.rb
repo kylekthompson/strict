@@ -10,6 +10,11 @@ module Strict
       def ===(_value)
         true
       end
+
+      def inspect
+        "Anything()"
+      end
+      alias to_s inspect
     end
   end
 end
