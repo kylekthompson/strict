@@ -4,8 +4,8 @@ require "test_helper"
 
 describe Strict::Attributes::Dsl do
   describe ".run" do
-    it "creates a recipe with valid identifiers and arguments" do
-      recipe = Strict::Attributes::Dsl.run do
+    it "creates a configuration with valid identifiers and arguments" do
+      configuration = Strict::Attributes::Dsl.run do
         no_arguments
         _underscore_identifier
         question?
@@ -24,7 +24,7 @@ describe Strict::Attributes::Dsl do
         hash_of HashOf(Integer => String)
         range_of RangeOf(Numeric)
       end
-      attributes = recipe.attributes.to_h { |a| [a.name, a] }
+      attributes = configuration.attributes.to_h { |a| [a.name, a] }
 
       assert_equal Strict::Validators::Anything.instance, attributes.fetch(:no_arguments).validator
       refute_nil attributes.fetch(:_underscore_identifier)
@@ -52,21 +52,21 @@ describe Strict::Attributes::Dsl do
     end
 
     it "allows overwriting attributes" do
-      recipe = Strict::Attributes::Dsl.run do
+      configuration = Strict::Attributes::Dsl.run do
         foo String
         foo Integer
       end
 
-      assert_equal %i[foo foo], recipe.attributes.map(&:name)
-      assert_equal [String, Integer], recipe.attributes.map(&:validator)
+      assert_equal %i[foo foo], configuration.attributes.map(&:name)
+      assert_equal [String, Integer], configuration.attributes.map(&:validator)
     end
 
     it "allows manually creating attributes" do
-      recipe = Strict::Attributes::Dsl.run do
+      configuration = Strict::Attributes::Dsl.run do
         strict_attribute :if
       end
 
-      assert_equal [:if], recipe.attributes.map(&:name)
+      assert_equal [:if], configuration.attributes.map(&:name)
     end
   end
 end

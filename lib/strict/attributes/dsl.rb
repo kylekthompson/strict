@@ -7,7 +7,7 @@ module Strict
         def run(&)
           dsl = new
           dsl.instance_eval(&)
-          ::Strict::Attributes::Recipe.new(attributes: dsl.__strict_dsl_internal_attributes)
+          ::Strict::Attributes::Configuration.new(attributes: dsl.__strict_dsl_internal_attributes)
         end
       end
 

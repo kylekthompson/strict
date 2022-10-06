@@ -19,9 +19,9 @@ describe Strict::Reader::Attributes do
     end
   end
 
-  it "exposes the recipe on the class" do
-    assert_equal Strict::Attributes::Recipe, @reader_class.strict_attributes_recipe.class
-    assert_equal %i[foo bar baz], @reader_class.strict_attributes_recipe.attributes.map(&:name)
+  it "exposes the configuration on the class" do
+    assert_equal Strict::Attributes::Configuration, @reader_class.strict_attributes.class
+    assert_equal %i[foo bar baz], @reader_class.strict_attributes.map(&:name)
   end
 
   it "does not expose writer methods" do
@@ -42,7 +42,7 @@ describe Strict::Reader::Attributes do
       @reader_class.new(foo: "1", bar: "2", baz: "3")
     end
 
-    assert_match(/'foo'/, error.message)
+    assert_match(/foo/, error.message)
   end
 
   it "coerces arguments that can be coerced" do
@@ -60,7 +60,7 @@ describe Strict::Reader::Attributes do
       @reader_class.new(foo: 1, baz: "3")
     end
 
-    assert_match(/'bar'/, error.message)
+    assert_match(/bar/, error.message)
   end
 
   it "does not allow additional attributes" do
@@ -68,7 +68,7 @@ describe Strict::Reader::Attributes do
       @reader_class.new(foo: 1, bar: "2", baz: "3", bat: "uh oh")
     end
 
-    assert_match(/'bat'/, error.message)
+    assert_match(/bat/, error.message)
   end
 
   it "aggregates errors" do
@@ -76,8 +76,8 @@ describe Strict::Reader::Attributes do
       @reader_class.new(foo: "1", baz: "3", bat: "uh oh")
     end
 
-    assert_match(/'foo'/, error.message)
-    assert_match(/'bar'/, error.message)
-    assert_match(/'bat'/, error.message)
+    assert_match(/foo/, error.message)
+    assert_match(/bar/, error.message)
+    assert_match(/bat/, error.message)
   end
 end

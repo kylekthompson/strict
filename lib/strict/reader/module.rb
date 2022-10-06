@@ -3,11 +3,11 @@
 module Strict
   module Reader
     class Module < ::Module
-      def initialize(recipe)
+      def initialize(configuration)
         super()
 
-        const_set(:STRICT_INTERNAL_ATTRIBUTES_RECIPE__, recipe)
-        recipe.attributes.each do |attribute|
+        const_set(Strict::Attributes::Configured::CONSTANT, configuration)
+        configuration.attributes.each do |attribute|
           module_eval(
             "def #{attribute.name} = #{attribute.instance_variable}", # def name = @instance_variable
             __FILE__,

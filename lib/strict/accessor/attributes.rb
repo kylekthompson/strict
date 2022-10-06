@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Strict
-  module Reader
+  module Accessor
     module Attributes
       def attributes(&block)
         block ||= -> {}
