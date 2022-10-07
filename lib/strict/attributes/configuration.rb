@@ -20,7 +20,7 @@ module Strict
         private
 
         def message_from(attribute_name:)
-          "Strict tried to find an attribute named #{attribute_name} but was unable." \
+          "Strict tried to find an attribute named #{attribute_name} but was unable. " \
             "It's likely this in an internal bug, feel free to open an issue at #{Strict::ISSUE_TRACKER} for help."
         end
       end
