@@ -1,22 +1,112 @@
 # Strict
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/strict`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Strict provides a means to strictly validate instantiation of values, instantiation and attribute assignment of objects, and method calls at runtime.
 
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add strict
+```sh
+$ bundle add strict
+```
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install strict
+```sh
+$ gem install strict
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+### `Strict::Value`
+
+```rb
+class Money
+  include Strict::Value
+
+  attributes do
+    amount_in_cents Integer
+    currency AnyOf("USD", "CAD"), default: "USD"
+  end
+end
+
+Money.new(amount_in_cents: 100_00)
+# => #<Money amount_in_cents=100_00 currency="USD">
+
+Money.new(amount_in_cents: 100_00, currency: "CAD")
+# => #<Money amount_in_cents=100_00 currency="CAD">
+
+Money.new(amount_in_cents: 100.00)
+# => Strict::InitializationError
+
+Money.new(amount_in_cents: 100_00).with(amount_in_cents: 200_00)
+# => #<Money amount_in_cents=200_00 currency="USD">
+
+Money.new(amount_in_cents: 100_00).amount_in_cents = 50_00
+# => NoMethodError
+
+Money.new(amount_in_cents: 100_00) == Money.new(amount_in_cents: 100_00)
+# => true
+```
+
+### `Strict::Object`
+
+```rb
+class Stateful
+  include Strict::Object
+
+  attributes do
+    some_state String
+    dependency Anything(), default: nil
+  end
+end
+
+Stateful.new(some_state: "123")
+# => #<Stateful some_state="123" dependency=nil>
+
+Stateful.new(some_state: "123").with(some_state: "456")
+# => NoMethodError
+
+Stateful.new(some_state: "123").some_state = "456"
+# => "456"
+# => #<Stateful some_state="456" dependency=nil>
+
+Stateful.new(some_state: "123").some_state = 456
+# => Strict::AssignmentError
+
+Stateful.new(some_state: "123") == Stateful.new(some_state: "123")
+# => false
+```
+
+### `Strict::Method`
+
+```rb
+class UpdateEmail
+  extend Strict::Method
+
+  sig do
+    user_id String, coerce: ->(value) { value.to_s }
+    email String
+    returns AnyOf(true, nil)
+  end
+  def call(user_id:, email:)
+    # contrived logic
+    user_id == email
+  end
+end
+
+UpdateEmail.new.call(user_id: 123, email: "123")
+# => true
+
+UpdateEmail.new.call(user_id: "123", email: "123")
+# => true
+
+UpdateEmail.new.call(user_id: "123", email: 123)
+# => Strict::MethodCallError
+
+UpdateEmail.new.call(user_id: "123", email: "456")
+# => Strict::MethodReturnError
+```
 
 ## Development
 
