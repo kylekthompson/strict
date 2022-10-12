@@ -114,15 +114,21 @@ describe Strict::Method do
     end.new
 
     assert_nil instance.call(1, 2.2, "3")
-    assert_raises Strict::Error do
+
+    error = assert_raises(Strict::MethodCallError) do
       instance.call(1, 2.2, 3)
     end
-    assert_raises Strict::Error do
+    assert_match(/three/, error.message)
+
+    error = assert_raises(Strict::MethodCallError) do
       instance.call(1, 2.2)
     end
-    assert_raises Strict::Error do
+    assert_match(/three/, error.message)
+
+    error = assert_raises(Strict::MethodCallError) do
       instance.call(1, 2.2, "3", 4)
     end
+    assert_match(/4/, error.message)
   end
 
   it "invalidates keyword parameters" do
@@ -138,15 +144,21 @@ describe Strict::Method do
     end.new
 
     assert_nil instance.call(one: 1, two: 2.2, three: "3")
-    assert_raises Strict::Error do
+
+    error = assert_raises(Strict::MethodCallError) do
       instance.call(one: 1, two: 2.2, three: 3)
     end
-    assert_raises Strict::Error do
+    assert_match(/three/, error.message)
+
+    error = assert_raises(Strict::MethodCallError) do
       instance.call(one: 1, two: 2.2)
     end
-    assert_raises Strict::Error do
+    assert_match(/three/, error.message)
+
+    error = assert_raises(Strict::MethodCallError) do
       instance.call(one: 1, two: 2.2, three: "3", four: 4)
     end
+    assert_match(/four/, error.message)
   end
 
   it "invalidates return values" do
@@ -163,8 +175,39 @@ describe Strict::Method do
     end.new
 
     assert_equal "1", instance.call("1")
-    assert_raises Strict::Error do
+
+    error = assert_raises(Strict::MethodReturnError) do
       instance.call(1)
+    end
+    assert_match(/1/, error.message)
+  end
+
+  it "ensures sigs align with methods" do
+    assert_raises(Strict::MethodDefinitionError) do
+      Class.new do
+        extend Strict::Method
+
+        sig do
+          one Anything()
+        end
+        def call(one, two)
+          one + two
+        end
+      end
+    end
+
+    assert_raises(Strict::MethodDefinitionError) do
+      Class.new do
+        extend Strict::Method
+
+        sig do
+          one Anything()
+          two Anything()
+        end
+        def call(one)
+          one
+        end
+      end
     end
   end
 
@@ -191,7 +234,7 @@ describe Strict::Method do
       assert_equal "12", instance.sigless("1", "2")
 
       assert_equal 3, instance.sigged(1, 2)
-      assert_raises Strict::Error do
+      assert_raises(Strict::MethodCallError) do
         assert_equal "12", instance.sigged("1", "2")
       end
     end
@@ -220,7 +263,7 @@ describe Strict::Method do
       assert_equal "12", klass.sigless("1", "2")
 
       assert_equal 3, klass.sigged(1, 2)
-      assert_raises Strict::Error do
+      assert_raises(Strict::MethodCallError) do
         assert_equal "12", klass.sigged("1", "2")
       end
     end
@@ -251,7 +294,7 @@ describe Strict::Method do
       assert_equal "12", klass.sigless("1", "2")
 
       assert_equal 3, klass.sigged(1, 2)
-      assert_raises Strict::Error do
+      assert_raises(Strict::MethodCallError) do
         assert_equal "12", klass.sigged("1", "2")
       end
     end
