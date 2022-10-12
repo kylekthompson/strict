@@ -3,10 +3,13 @@
 module Strict
   module Accessor
     class Module < ::Module
+      attr_reader :configuration
+
       # rubocop:disable Metrics/MethodLength
       def initialize(configuration)
         super()
 
+        @configuration = configuration
         const_set(Strict::Attributes::Configured::CONSTANT, configuration)
         configuration.attributes.each do |attribute|
           module_eval(
@@ -33,6 +36,10 @@ module Strict
         end
       end
       # rubocop:enable Metrics/MethodLength
+
+      def inspect
+        "#<#{self.class} (#{configuration.attributes.map(&:name).join(', ')})>"
+      end
     end
   end
 end
