@@ -115,4 +115,19 @@ describe Strict::Accessor::Attributes do
        baz="3">
     OUTPUT
   end
+
+  it "exposes a coercer" do
+    instance = AccessorClass.coercer.call(foo: 1, bar: "2", baz: "3")
+    assert_equal AccessorClass, instance.class
+    assert_equal 1, instance.foo
+    assert_equal "2", instance.bar
+    assert_equal "3", instance.baz
+
+    instance = AccessorClass.coercer.call("1")
+    assert_equal "1", instance
+
+    assert_raises(Strict::InitializationError) do
+      AccessorClass.coercer.call({})
+    end
+  end
 end
