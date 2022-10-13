@@ -10,10 +10,9 @@ module Strict
       end
 
       def call(value)
-        return nil if value.nil?
-        return coerce(value.to_h) if value.respond_to?(:to_h)
+        return value if value.nil? || !value.respond_to?(:to_h)
 
-        value
+        coerce(value.to_h)
       end
 
       private

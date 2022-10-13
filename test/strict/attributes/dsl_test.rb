@@ -16,6 +16,13 @@ describe Strict::Attributes::Dsl do
         default_generator default_generator: -> { 1 }
         coerce coerce: true
         coerce_method coerce: :some_method
+        coerce_array coerce: ToArray()
+        coerce_array_with coerce: ToArray(with: ->(element) { element.to_s })
+        coerce_hash coerce: ToHash()
+        coerce_hash_with coerce: ToHash(
+          with_keys: ->(element) { element.to_s },
+          with_values: ->(element) { element.to_s }
+        )
         all_of AllOf(Enumerable, Comparable)
         any_of AnyOf(Integer, String, nil)
         anything Anything()
@@ -41,6 +48,10 @@ describe Strict::Attributes::Dsl do
         "value",
         for_class: Module.new { def self.some_method(value) = "coerced #{value}" }
       )
+      assert_equal [[:one, 1]], configuration.named!(:coerce_array).coerce({ one: 1 }, for_class: nil)
+      assert_equal %w[1 2], configuration.named!(:coerce_array_with).coerce([1, 2], for_class: nil)
+      assert_equal({ one: 1 }, configuration.named!(:coerce_hash).coerce([[:one, 1]], for_class: nil))
+      assert_equal({ "one" => "1" }, configuration.named!(:coerce_hash_with).coerce([[:one, 1]], for_class: nil))
       assert_equal Strict::Validators::AllOf, configuration.named!(:all_of).validator.class
       assert_equal Strict::Validators::AnyOf, configuration.named!(:any_of).validator.class
       assert_equal Strict::Validators::Anything, configuration.named!(:anything).validator.class
