@@ -10,7 +10,7 @@ module Strict
         super()
 
         @configuration = configuration
-        const_set(Strict::Attributes::Configured::CONSTANT, configuration)
+        const_set(Strict::Attributes::Class::CONSTANT, configuration)
         configuration.attributes.each do |attribute|
           module_eval(
             "def #{attribute.name} = #{attribute.instance_variable}", # def name = @instance_variable

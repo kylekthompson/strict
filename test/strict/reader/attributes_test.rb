@@ -101,4 +101,19 @@ describe Strict::Reader::Attributes do
        baz="3">
     OUTPUT
   end
+
+  it "exposes a coercer" do
+    instance = ReaderClass.coercer.call(foo: 1, bar: "2", baz: "3")
+    assert_equal ReaderClass, instance.class
+    assert_equal 1, instance.foo
+    assert_equal "2", instance.bar
+    assert_equal "3", instance.baz
+
+    instance = ReaderClass.coercer.call("1")
+    assert_equal "1", instance
+
+    assert_raises(Strict::InitializationError) do
+      ReaderClass.coercer.call({})
+    end
+  end
 end

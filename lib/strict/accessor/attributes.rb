@@ -8,7 +8,7 @@ module Strict
         configuration = Strict::Attributes::Dsl.run(&block)
         include Module.new(configuration)
         include Strict::Attributes::Instance
-        extend Strict::Attributes::Configured
+        extend Strict::Attributes::Class
       end
     end
   end

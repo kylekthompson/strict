@@ -11,6 +11,7 @@ module Strict
         end
       end
 
+      include ::Strict::Dsl::Coercible
       include ::Strict::Dsl::Validatable
 
       attr_reader :__strict_dsl_internal_attributes

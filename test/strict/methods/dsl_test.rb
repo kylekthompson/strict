@@ -15,6 +15,13 @@ describe Strict::Methods::Dsl do
         default_value default_value: 1
         default_generator default_generator: -> { 1 }
         coerce coerce: ->(value) { "coerced #{value}" }
+        coerce_array coerce: ToArray()
+        coerce_array_with coerce: ToArray(with: ->(element) { element.to_s })
+        coerce_hash coerce: ToHash()
+        coerce_hash_with coerce: ToHash(
+          with_keys: ->(element) { element.to_s },
+          with_values: ->(element) { element.to_s }
+        )
         all_of AllOf(Enumerable, Comparable)
         any_of AnyOf(Integer, String, nil)
         anything Anything()
@@ -35,6 +42,10 @@ describe Strict::Methods::Dsl do
       assert_equal 1, parameters.fetch(:default_value).default_generator.call
       assert_equal 1, parameters.fetch(:default_generator).default_generator.call
       assert_equal "coerced value", parameters.fetch(:coerce).coerce("value")
+      assert_equal [[:one, 1]], parameters.fetch(:coerce_array).coerce({ one: 1 })
+      assert_equal %w[1 2], parameters.fetch(:coerce_array_with).coerce([1, 2])
+      assert_equal({ one: 1 }, parameters.fetch(:coerce_hash).coerce([[:one, 1]]))
+      assert_equal({ "one" => "1" }, parameters.fetch(:coerce_hash_with).coerce([[:one, 1]]))
       assert_equal Strict::Validators::AllOf, parameters.fetch(:all_of).validator.class
       assert_equal Strict::Validators::AnyOf, parameters.fetch(:any_of).validator.class
       assert_equal Strict::Validators::Anything, parameters.fetch(:anything).validator.class
