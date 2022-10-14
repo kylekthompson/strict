@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    strict (1.1.0)
+    strict (1.2.0)
       zeitwerk (~> 2.6)
 
 GEM
@@ -63,4 +63,4 @@ DEPENDENCIES
   strict!
 
 BUNDLED WITH
-   2.3.22
+   2.3.23
