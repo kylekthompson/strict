@@ -213,7 +213,7 @@ describe Strict::Method do
 
   describe "instance methods" do
     it "only strictly validates methods declared with a sig" do
-      instance = Class.new do
+      klass = Class.new do
         extend Strict::Method
 
         def sigless(baz, bat)
@@ -228,8 +228,11 @@ describe Strict::Method do
         def sigged(baz, bat)
           baz + bat
         end
-      end.new
+      end
+      instance = klass.new
 
+      assert_empty klass.strict_class_methods.keys
+      assert_equal [:sigged], klass.strict_instance_methods.keys
       assert_equal 3, instance.sigless(1, 2)
       assert_equal "12", instance.sigless("1", "2")
 
@@ -259,6 +262,8 @@ describe Strict::Method do
         end
       end
 
+      assert_equal [:sigged], klass.strict_class_methods.keys
+      assert_empty klass.strict_instance_methods.keys
       assert_equal 3, klass.sigless(1, 2)
       assert_equal "12", klass.sigless("1", "2")
 
@@ -290,6 +295,8 @@ describe Strict::Method do
         end
       end
 
+      assert_equal [:sigged], klass.strict_class_methods.keys
+      assert_empty klass.strict_instance_methods.keys
       assert_equal 3, klass.sigless(1, 2)
       assert_equal "12", klass.sigless("1", "2")
 

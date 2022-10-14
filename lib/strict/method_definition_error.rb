@@ -30,7 +30,7 @@ module Strict
         "    - #{parameter_name}"
       end.join("\n")
 
-      "  Some parameters were in the `sig`, but were not in the parameter list:\n#{details}"
+      "  Some parameters were in the sig, but were not in the parameter list:\n#{details}"
     end
 
     def additional_parameters_message_from(additional_parameters)
@@ -40,7 +40,7 @@ module Strict
         "    - #{parameter_name}"
       end.join("\n")
 
-      "  Some parameters were not in the `sig`, but were in the parameter list:\n#{details}"
+      "  Some parameters were not in the sig, but were in the parameter list:\n#{details}"
     end
   end
 end
