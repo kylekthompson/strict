@@ -11,7 +11,7 @@ module Strict
         attr_reader :parameter_name
 
         def initialize(parameter_name:)
-          super(message_from(parameter_name:))
+          super(message_from(parameter_name: parameter_name))
 
           @parameter_name = parameter_name
         end
@@ -47,7 +47,11 @@ module Strict
 
         missing_parameters = expected_parameters - defined_parameters
         additional_parameters = defined_parameters - expected_parameters
-        raise Strict::MethodDefinitionError.new(verifiable_method: self, missing_parameters:, additional_parameters:)
+        raise Strict::MethodDefinitionError.new(
+          verifiable_method: self,
+          missing_parameters: missing_parameters,
+          additional_parameters: additional_parameters
+        )
       end
 
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
@@ -113,8 +117,8 @@ module Strict
             verifiable_method: self,
             remaining_args: args,
             remaining_kwargs: kwargs,
-            invalid_parameters:,
-            missing_parameters:
+            invalid_parameters: invalid_parameters,
+            missing_parameters: missing_parameters
           )
         end
       end
@@ -124,7 +128,7 @@ module Strict
         value = returns.coerce(value)
         return if returns.valid?(value)
 
-        raise Strict::MethodReturnError.new(verifiable_method: self, value:)
+        raise Strict::MethodReturnError.new(verifiable_method: self, value: value)
       end
 
       private

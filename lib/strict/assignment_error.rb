@@ -5,7 +5,7 @@ module Strict
     attr_reader :invalid_attribute, :value
 
     def initialize(assignable_class:, invalid_attribute:, value:)
-      super(message_from(assignable_class:, invalid_attribute:, value:))
+      super(message_from(assignable_class: assignable_class, invalid_attribute: invalid_attribute, value: value))
 
       @invalid_attribute = invalid_attribute
       @value = value

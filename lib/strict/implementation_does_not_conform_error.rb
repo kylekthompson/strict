@@ -4,8 +4,15 @@ module Strict
   class ImplementationDoesNotConformError < Error
     attr_reader :interface, :receiver, :missing_methods, :invalid_method_definitions
 
-    def initialize(interface:, receiver:, missing_methods:, invalid_method_definitions:)
-      super(message_from(interface:, receiver:, missing_methods:, invalid_method_definitions:))
+    def initialize(interface:, receiver:, missing_methods:, invalid_method_definitions:) # rubocop:disable Metrics/MethodLength
+      super(
+        message_from(
+          interface: interface,
+          receiver: receiver,
+          missing_methods: missing_methods,
+          invalid_method_definitions: invalid_method_definitions
+        )
+      )
 
       @interface = interface
       @receiver = receiver

@@ -12,7 +12,7 @@ module Strict
         attr_reader :attribute_name
 
         def initialize(attribute_name:)
-          super(message_from(attribute_name:))
+          super(message_from(attribute_name: attribute_name))
 
           @attribute_name = attribute_name
         end

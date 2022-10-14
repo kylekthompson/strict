@@ -4,9 +4,9 @@ module Strict
   module Attributes
     class Dsl < BasicObject
       class << self
-        def run(&)
+        def run(&block)
           dsl = new
-          dsl.instance_eval(&)
+          dsl.instance_eval(&block)
           ::Strict::Attributes::Configuration.new(attributes: dsl.__strict_dsl_internal_attributes.values)
         end
       end

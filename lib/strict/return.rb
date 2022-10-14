@@ -4,7 +4,7 @@ module Strict
   class Return
     class << self
       def make(validator = Validators::Anything.instance, coerce: false)
-        new(validator:, coercer: coerce)
+        new(validator: validator, coercer: coerce)
       end
     end
 
