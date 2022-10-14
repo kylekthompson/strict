@@ -108,6 +108,71 @@ UpdateEmail.new.call(user_id: "123", email: "456")
 # => Strict::MethodReturnError
 ```
 
+### `Strict::Interface`
+
+```rb
+class Storage
+  extend Strict::Interface
+
+  expose(:write) do
+    key String
+    contents String
+    returns Boolean()
+  end
+
+  expose(:read) do
+    key String
+    returns AnyOf(String, nil)
+  end
+end
+
+module Storages
+  class Memory
+    def initialize
+      @storage = {}
+    end
+
+    def write(key:, contents:)
+      storage[key] = contents
+      true
+    end
+
+    def read(key:)
+      storage[key]
+    end
+
+    private
+
+    attr_reader :storage
+  end
+end
+
+storage = Storage.new(Storages::Memory.new)
+# => #<Storage implementation=#<Storages::Memory>>
+
+storage.write(key: "some/path/to/file.rb", contents: "Hello")
+# => true
+
+storage.write(key: "some/path/to/file.rb", contents: {})
+# => Strict::MethodCallError
+
+storage.read(key: "some/path/to/file.rb")
+# => "Hello"
+
+storage.read(key: "some/path/to/other.rb")
+# => nil
+
+module Storages
+  class Wat
+    def write(key:)
+    end
+  end
+end
+
+storage = Storage.new(Storages::Wat.new)
+# => Strict::ImplementationDoesNotConformError
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
