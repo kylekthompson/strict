@@ -10,7 +10,12 @@ module Strict
           raise ArgumentError, "Only one of 'default', 'default_value', or 'default_generator' can be provided"
         end
 
-        new(name: name.to_sym, validator:, default_generator: make_default_generator(**defaults), coercer: coerce)
+        new(
+          name: name.to_sym,
+          validator: validator,
+          default_generator: make_default_generator(**defaults),
+          coercer: coerce
+        )
       end
 
       private

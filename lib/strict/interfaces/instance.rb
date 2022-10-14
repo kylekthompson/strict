@@ -41,8 +41,8 @@ module Strict
           raise Strict::ImplementationDoesNotConformError.new(
             interface: self.class,
             receiver: implementation,
-            missing_methods:,
-            invalid_method_definitions:
+            missing_methods: missing_methods,
+            invalid_method_definitions: invalid_method_definitions
           )
         end
 

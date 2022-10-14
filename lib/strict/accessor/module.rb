@@ -12,11 +12,11 @@ module Strict
         @configuration = configuration
         const_set(Strict::Attributes::Class::CONSTANT, configuration)
         configuration.attributes.each do |attribute|
-          module_eval(
-            "def #{attribute.name} = #{attribute.instance_variable}", # def name = @instance_variable
-            __FILE__,
-            __LINE__ - 2
-          )
+          module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+            def #{attribute.name}            # def name
+              #{attribute.instance_variable} #   @instance_variable
+            end                              # end
+          RUBY
 
           module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
             def #{attribute.name}=(value)                                         # def name=(value)
@@ -28,7 +28,7 @@ module Strict
                 raise Strict::AssignmentError.new(                                #     raise Strict::AssignmentError.new(
                   assignable_class: self.class,                                   #       assignable_class: self.class,
                   invalid_attribute: attribute,                                   #       invalid_attribute: attribute,
-                  value:                                                          #       value:
+                  value: value                                                    #       value: value
                 )                                                                 #     )
               end                                                                 #   end
             end                                                                   # end

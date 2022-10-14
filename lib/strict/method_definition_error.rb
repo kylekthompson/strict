@@ -5,7 +5,13 @@ module Strict
     attr_reader :verifiable_method, :missing_parameters, :additional_parameters
 
     def initialize(verifiable_method:, missing_parameters:, additional_parameters:)
-      super(message_from(verifiable_method:, missing_parameters:, additional_parameters:))
+      super(
+        message_from(
+          verifiable_method: verifiable_method,
+          missing_parameters: missing_parameters,
+          additional_parameters: additional_parameters
+        )
+      )
 
       @verifiable_method = verifiable_method
       @missing_parameters = missing_parameters

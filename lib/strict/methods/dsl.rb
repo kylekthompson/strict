@@ -4,9 +4,9 @@ module Strict
   module Methods
     class Dsl < BasicObject
       class << self
-        def run(&)
+        def run(&block)
           dsl = new
-          dsl.instance_eval(&)
+          dsl.instance_eval(&block)
           ::Strict::Methods::Configuration.new(
             parameters: dsl.__strict_dsl_internal_parameters.values,
             returns: dsl.__strict_dsl_internal_returns

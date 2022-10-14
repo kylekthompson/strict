@@ -33,9 +33,9 @@ module Strict
 
         raise InitializationError.new(
           initializable_class: self.class,
-          remaining_attributes:,
-          invalid_attributes:,
-          missing_attributes:
+          remaining_attributes: remaining_attributes,
+          invalid_attributes: invalid_attributes,
+          missing_attributes: missing_attributes
         )
       end
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity

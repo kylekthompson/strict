@@ -4,8 +4,15 @@ module Strict
   class InitializationError < Error
     attr_reader :remaining_attributes, :invalid_attributes, :missing_attributes
 
-    def initialize(initializable_class:, remaining_attributes:, invalid_attributes:, missing_attributes:)
-      super(message_from(initializable_class:, remaining_attributes:, invalid_attributes:, missing_attributes:))
+    def initialize(initializable_class:, remaining_attributes:, invalid_attributes:, missing_attributes:) # rubocop:disable Metrics/MethodLength
+      super(
+        message_from(
+          initializable_class: initializable_class,
+          remaining_attributes: remaining_attributes,
+          invalid_attributes: invalid_attributes,
+          missing_attributes: missing_attributes
+        )
+      )
 
       @remaining_attributes = remaining_attributes
       @invalid_attributes = invalid_attributes

@@ -5,7 +5,7 @@ module Strict
     attr_reader :verifiable_method, :value
 
     def initialize(verifiable_method:, value:)
-      super(message_from(verifiable_method:, value:))
+      super(message_from(verifiable_method: verifiable_method, value: value))
 
       @verifiable_method = verifiable_method
       @value = value
