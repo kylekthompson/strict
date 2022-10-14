@@ -22,7 +22,7 @@ describe Strict::MethodDefinitionError do
 
       expected_message = <<~MESSAGE.chomp
         Defining Strict::Methods::VerifiableMethod#instance? failed because:
-          Some parameters were in the `sig`, but were not in the parameter list:
+          Some parameters were in the sig, but were not in the parameter list:
             - one
             - two
       MESSAGE
@@ -39,7 +39,7 @@ describe Strict::MethodDefinitionError do
 
       expected_message = <<~MESSAGE.chomp
         Defining Strict::Methods::VerifiableMethod#instance? failed because:
-          Some parameters were not in the `sig`, but were in the parameter list:
+          Some parameters were not in the sig, but were in the parameter list:
             - one
             - two
       MESSAGE
@@ -56,10 +56,10 @@ describe Strict::MethodDefinitionError do
 
       expected_message = <<~MESSAGE.chomp
         Defining Strict::Methods::VerifiableMethod#instance? failed because:
-          Some parameters were in the `sig`, but were not in the parameter list:
+          Some parameters were in the sig, but were not in the parameter list:
             - one
             - two
-          Some parameters were not in the `sig`, but were in the parameter list:
+          Some parameters were not in the sig, but were in the parameter list:
             - three
             - four
       MESSAGE
