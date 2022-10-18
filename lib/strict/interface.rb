@@ -7,6 +7,10 @@ module Strict
       mod.include(Interfaces::Instance)
     end
 
+    def coercer
+      Interfaces::Coercer.new(self)
+    end
+
     def expose(method_name, &block)
       sig = sig(&block)
       parameter_list = sig.parameters.map { |parameter| "#{parameter.name}:" }.join(", ")
