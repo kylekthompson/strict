@@ -132,6 +132,28 @@ describe Strict::Interface do
     end
   end
 
+  describe ".coercer" do
+    it "returns nil when coercing nil" do
+      assert_nil InterfaceTest::Interface.coercer.call(nil)
+    end
+
+    it "returns the interface when passed an instance of the interface" do
+      interface = InterfaceTest::Interface.new(InterfaceTest::GoodImplementation.new)
+      assert_equal interface, InterfaceTest::Interface.coercer.call(interface)
+    end
+
+    it "attempts to instantiate the interface otherwise" do
+      interface = InterfaceTest::Interface.coercer.call(InterfaceTest::GoodImplementation.new)
+      assert_equal InterfaceTest::Interface, interface.class
+      assert_equal InterfaceTest::GoodImplementation, interface.implementation.class
+      assert_equal "1", interface.first_method(foo: 1, bar: "2")
+
+      assert_raises(Strict::ImplementationDoesNotConformError) do
+        InterfaceTest::Interface.coercer.call(InterfaceTest::BadImplementation.new)
+      end
+    end
+  end
+
   describe "exposed methods" do
     it "behaves like a Strict::Method" do
       interface = InterfaceTest::Interface.new(InterfaceTest::GoodImplementation.new)
