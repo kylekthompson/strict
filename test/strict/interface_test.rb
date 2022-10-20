@@ -23,6 +23,10 @@ module InterfaceTest
       buzz String
       returns String
     end
+
+    expose(:no_params) do
+      returns String
+    end
   end
 
   # rubocop:disable Lint/UnusedMethodArgument
@@ -47,6 +51,10 @@ module InterfaceTest
 
     def third_method(fizz:, buzz:)
       "3"
+    end
+
+    def no_params
+      "4"
     end
   end
   # rubocop:enable Lint/UnusedMethodArgument
@@ -74,6 +82,7 @@ describe Strict::Interface do
       assert_match(/first_method/, error.message)
       assert_match(/second_method/, error.message)
       assert_match(/third_method/, error.message)
+      assert_match(/no_params/, error.message)
     end
 
     it "does not raise when given a good implementation" do
@@ -82,6 +91,7 @@ describe Strict::Interface do
       assert_equal "1", interface.first_method(foo: 1, bar: "2")
       assert_equal 2, interface.second_method(baz: "1", bat: 2)
       assert_equal "3", interface.third_method(fizz: 1, buzz: "2")
+      assert_equal "4", interface.no_params
     end
 
     it "raises when missing a parameter" do
