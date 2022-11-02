@@ -12,7 +12,7 @@ module Strict
           h[k] = { additional_parameters: [], missing_parameters: [], non_keyword_parameters: [] }
         end
 
-        self.class.strict_instance_methods.each do |method_name, strict_method|
+        self.class.strict_instance_methods.each do |method_name, strict_method| # rubocop:disable Metrics/BlockLength
           unless implementation.respond_to?(method_name)
             missing_methods ||= []
             missing_methods << method_name
@@ -21,9 +21,16 @@ module Strict
 
           expected_parameters = Set.new(strict_method.parameters.map(&:name))
           defined_parameters = Set.new
+          has_keyword_splat = false
 
           implementation.method(method_name).parameters.each do |kind, parameter_name|
-            next if kind == :block
+            case kind
+            when :block, :rest
+              next
+            when :keyrest
+              has_keyword_splat = true
+              next
+            end
 
             if expected_parameters.include?(parameter_name)
               defined_parameters.add(parameter_name)
@@ -32,6 +39,8 @@ module Strict
               invalid_method_definitions[method_name][:additional_parameters] << parameter_name
             end
           end
+
+          next if has_keyword_splat
 
           missing_parameters = expected_parameters - defined_parameters
           invalid_method_definitions[method_name][:missing_parameters] = missing_parameters if missing_parameters.any?

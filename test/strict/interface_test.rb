@@ -140,6 +140,48 @@ describe Strict::Interface do
         end.new
       )
     end
+
+    it "does not raise when keyword args are entirely splatted" do
+      @interface.new(
+        Class.new do
+          def call(**kwargs); end
+        end.new
+      )
+    end
+
+    it "does not raise when keyword args are partially splatted" do
+      @interface.new(
+        Class.new do
+          def call(one:, **kwargs); end
+        end.new
+      )
+    end
+
+    it "does not raise when non-keyword args are entirely splatted" do
+      @interface.new(
+        Class.new do
+          def call(*args, one:, two:); end
+        end.new
+      )
+    end
+
+    it "raises when non-keyword args are partially splatted" do
+      assert_raises(Strict::ImplementationDoesNotConformError) do
+        @interface.new(
+          Class.new do
+            def call(foo, *args, one:, two:); end
+          end.new
+        )
+      end
+    end
+
+    it "does not raise when non-keyword and keyword args are entirely splatted" do
+      @interface.new(
+        Class.new do
+          def call(*args, **kwargs); end
+        end.new
+      )
+    end
   end
 
   describe ".coercer" do
