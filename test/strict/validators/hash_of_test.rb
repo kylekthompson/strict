@@ -33,6 +33,7 @@ describe Strict::Validators::HashOf do
   describe "#to_s" do
     it "is meaningful" do
       hash_of = Strict::Validators::HashOf.new("2", "3")
+
       assert_equal "HashOf(\"2\" => \"3\")", hash_of.to_s
     end
   end
@@ -40,6 +41,7 @@ describe Strict::Validators::HashOf do
   describe "#inspect" do
     it "is meaningful" do
       hash_of = Strict::Validators::HashOf.new("2", "3")
+
       assert_equal "HashOf(\"2\" => \"3\")", hash_of.inspect
     end
   end

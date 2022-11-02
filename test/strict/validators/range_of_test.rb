@@ -48,6 +48,7 @@ describe Strict::Validators::RangeOf do
   describe "#to_s" do
     it "is meaningful" do
       range_of = Strict::Validators::RangeOf.new("2")
+
       assert_equal "RangeOf(\"2\")", range_of.to_s
     end
   end
@@ -55,6 +56,7 @@ describe Strict::Validators::RangeOf do
   describe "#inspect" do
     it "is meaningful" do
       range_of = Strict::Validators::RangeOf.new("2")
+
       assert_equal "RangeOf(\"2\")", range_of.inspect
     end
   end

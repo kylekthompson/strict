@@ -25,6 +25,7 @@ describe Strict::Validators::Boolean do
   describe "#to_s" do
     it "is meaningful" do
       boolean = Strict::Validators::Boolean.instance
+
       assert_equal "Boolean()", boolean.to_s
     end
   end
@@ -32,6 +33,7 @@ describe Strict::Validators::Boolean do
   describe "#inspect" do
     it "is meaningful" do
       boolean = Strict::Validators::Boolean.instance
+
       assert_equal "Boolean()", boolean.inspect
     end
   end

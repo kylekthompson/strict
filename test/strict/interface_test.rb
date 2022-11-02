@@ -149,11 +149,13 @@ describe Strict::Interface do
 
     it "returns the interface when passed an instance of the interface" do
       interface = InterfaceTest::Interface.new(InterfaceTest::GoodImplementation.new)
+
       assert_equal interface, InterfaceTest::Interface.coercer.call(interface)
     end
 
     it "attempts to instantiate the interface otherwise" do
       interface = InterfaceTest::Interface.coercer.call(InterfaceTest::GoodImplementation.new)
+
       assert_equal InterfaceTest::Interface, interface.class
       assert_equal InterfaceTest::GoodImplementation, interface.implementation.class
       assert_equal "1", interface.first_method(foo: 1, bar: "2")
