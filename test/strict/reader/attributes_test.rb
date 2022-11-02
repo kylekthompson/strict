@@ -32,6 +32,7 @@ describe Strict::Reader::Attributes do
 
   it "exposes reader methods" do
     instance = ReaderClass.new(foo: 1, bar: "2", baz: "3")
+
     assert_equal 1, instance.foo
   end
 
@@ -45,11 +46,13 @@ describe Strict::Reader::Attributes do
 
   it "coerces arguments that can be coerced" do
     instance = ReaderClass.new(foo: 1, bar: 2, baz: "3")
+
     assert_equal "2", instance.bar
   end
 
   it "does not require optional attributes" do
     instance = ReaderClass.new(foo: 1, bar: "2")
+
     assert_equal "some string", instance.baz
   end
 
@@ -87,6 +90,7 @@ describe Strict::Reader::Attributes do
 
   it "can be inspected" do
     instance = ReaderClass.new(foo: 1, bar: "2", baz: "3")
+
     assert_equal "#<ReaderClass foo=1 bar=\"2\" baz=\"3\">", instance.inspect
   end
 
@@ -94,6 +98,7 @@ describe Strict::Reader::Attributes do
     instance = ReaderClass.new(foo: 1, bar: "2", baz: "3")
     output = StringIO.new
     PP.pp(instance, output, 5)
+
     assert_equal <<~OUTPUT, output.string
       #<ReaderClass
        foo=1
@@ -104,12 +109,14 @@ describe Strict::Reader::Attributes do
 
   it "exposes a coercer" do
     instance = ReaderClass.coercer.call(foo: 1, bar: "2", baz: "3")
+
     assert_equal ReaderClass, instance.class
     assert_equal 1, instance.foo
     assert_equal "2", instance.bar
     assert_equal "3", instance.baz
 
     instance = ReaderClass.coercer.call("1")
+
     assert_equal "1", instance
 
     assert_raises(Strict::InitializationError) do

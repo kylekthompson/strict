@@ -20,16 +20,19 @@ describe Strict::Validators::AllOf do
 
     it "validates when all subvalidators validate" do
       all_of = Strict::Validators::AllOf.new(@validates, @validates, @validates)
+
       assert all_of === @value
     end
 
     it "does not validate when some subvalidators validate" do
       all_of = Strict::Validators::AllOf.new(@validates, @invalidates, @validates)
+
       refute all_of === @value
     end
 
     it "does not validate when no subvalidators validate" do
       all_of = Strict::Validators::AllOf.new(@invalidates, @invalidates, @invalidates)
+
       refute all_of === @value
     end
   end
@@ -37,6 +40,7 @@ describe Strict::Validators::AllOf do
   describe "#to_s" do
     it "is meaningful" do
       all_of = Strict::Validators::AllOf.new(1, "2", nil, Integer)
+
       assert_equal "AllOf(1, \"2\", nil, Integer)", all_of.to_s
     end
   end
@@ -44,6 +48,7 @@ describe Strict::Validators::AllOf do
   describe "#inspect" do
     it "is meaningful" do
       all_of = Strict::Validators::AllOf.new(1, "2", nil, Integer)
+
       assert_equal "AllOf(1, \"2\", nil, Integer)", all_of.inspect
     end
   end

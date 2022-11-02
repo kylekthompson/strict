@@ -118,16 +118,19 @@ describe Strict::Method do
     error = assert_raises(Strict::MethodCallError) do
       instance.call(1, 2.2, 3)
     end
+
     assert_match(/three/, error.message)
 
     error = assert_raises(Strict::MethodCallError) do
       instance.call(1, 2.2)
     end
+
     assert_match(/three/, error.message)
 
     error = assert_raises(Strict::MethodCallError) do
       instance.call(1, 2.2, "3", 4)
     end
+
     assert_match(/4/, error.message)
   end
 
@@ -148,16 +151,19 @@ describe Strict::Method do
     error = assert_raises(Strict::MethodCallError) do
       instance.call(one: 1, two: 2.2, three: 3)
     end
+
     assert_match(/three/, error.message)
 
     error = assert_raises(Strict::MethodCallError) do
       instance.call(one: 1, two: 2.2)
     end
+
     assert_match(/three/, error.message)
 
     error = assert_raises(Strict::MethodCallError) do
       instance.call(one: 1, two: 2.2, three: "3", four: 4)
     end
+
     assert_match(/four/, error.message)
   end
 
@@ -179,6 +185,7 @@ describe Strict::Method do
     error = assert_raises(Strict::MethodReturnError) do
       instance.call(1)
     end
+
     assert_match(/1/, error.message)
   end
 

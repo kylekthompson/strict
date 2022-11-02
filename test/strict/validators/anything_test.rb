@@ -6,6 +6,7 @@ describe Strict::Validators::Anything do
   describe "#===" do
     it "validates anything" do
       anything = Strict::Validators::Anything.instance
+
       assert anything === 1
       assert anything === true
       assert anything === {}
@@ -17,6 +18,7 @@ describe Strict::Validators::Anything do
   describe "#to_s" do
     it "is meaningful" do
       anything = Strict::Validators::Anything.instance
+
       assert_equal "Anything()", anything.to_s
     end
   end
@@ -24,6 +26,7 @@ describe Strict::Validators::Anything do
   describe "#inspect" do
     it "is meaningful" do
       anything = Strict::Validators::Anything.instance
+
       assert_equal "Anything()", anything.inspect
     end
   end

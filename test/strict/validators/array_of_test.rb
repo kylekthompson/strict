@@ -28,6 +28,7 @@ describe Strict::Validators::ArrayOf do
   describe "#to_s" do
     it "is meaningful" do
       array_of = Strict::Validators::ArrayOf.new("2")
+
       assert_equal "ArrayOf(\"2\")", array_of.to_s
     end
   end
@@ -35,6 +36,7 @@ describe Strict::Validators::ArrayOf do
   describe "#inspect" do
     it "is meaningful" do
       array_of = Strict::Validators::ArrayOf.new("2")
+
       assert_equal "ArrayOf(\"2\")", array_of.inspect
     end
   end

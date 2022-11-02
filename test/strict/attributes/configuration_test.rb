@@ -19,6 +19,7 @@ describe Strict::Attributes::Configuration do
       )
 
       attribute = configuration.named!(:bar)
+
       assert_equal :bar, attribute.name
     end
 
