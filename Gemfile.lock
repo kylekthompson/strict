@@ -16,7 +16,7 @@ GEM
     irb (1.4.2)
       reline (>= 0.3.0)
     json (2.6.2)
-    minitest (5.16.3)
+    minitest (5.17.0)
     minitest-spec-context (0.0.4)
     parallel (1.22.1)
     parser (3.1.2.1)
