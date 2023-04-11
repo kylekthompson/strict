@@ -198,8 +198,8 @@ describe Strict::Interface do
     it "attempts to instantiate the interface otherwise" do
       interface = InterfaceTest::Interface.coercer.call(InterfaceTest::GoodImplementation.new)
 
-      assert_equal InterfaceTest::Interface, interface.class
-      assert_equal InterfaceTest::GoodImplementation, interface.implementation.class
+      assert_instance_of InterfaceTest::Interface, interface
+      assert_instance_of InterfaceTest::GoodImplementation, interface.implementation
       assert_equal "1", interface.first_method(foo: 1, bar: "2")
 
       assert_raises(Strict::ImplementationDoesNotConformError) do

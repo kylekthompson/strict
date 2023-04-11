@@ -34,7 +34,7 @@ describe Strict::Value do
   end
 
   it "exposes the configuration on the class" do
-    assert_equal Strict::Attributes::Configuration, ValueClass.strict_attributes.class
+    assert_instance_of Strict::Attributes::Configuration, ValueClass.strict_attributes
     assert_equal %i[foo bar baz], ValueClass.strict_attributes.map(&:name)
   end
 
@@ -104,7 +104,7 @@ describe Strict::Value do
     value_instance_three = ValueClass.new(foo: 1, bar: "2", baz: "4")
     other_value_instance_one = @other_value_class.new(foo: 1, bar: "2", baz: "3")
 
-    assert_equal value_instance_one, value_instance_one
+    assert_equal value_instance_one, value_instance_one # rubocop:disable Minitest/UselessAssertion
     assert_equal value_instance_one, value_instance_two
     assert_equal value_instance_two, value_instance_one
     refute_equal value_instance_three, value_instance_one
@@ -172,7 +172,7 @@ describe Strict::Value do
   it "exposes a coercer" do
     instance = ValueClass.coercer.call(foo: 1, bar: "2", baz: "3")
 
-    assert_equal ValueClass, instance.class
+    assert_instance_of ValueClass, instance
     assert_equal 1, instance.foo
     assert_equal "2", instance.bar
     assert_equal "3", instance.baz

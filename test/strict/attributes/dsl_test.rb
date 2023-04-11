@@ -52,13 +52,13 @@ describe Strict::Attributes::Dsl do
       assert_equal %w[1 2], configuration.named!(:coerce_array_with).coerce([1, 2], for_class: nil)
       assert_equal({ one: 1 }, configuration.named!(:coerce_hash).coerce([[:one, 1]], for_class: nil))
       assert_equal({ "one" => "1" }, configuration.named!(:coerce_hash_with).coerce([[:one, 1]], for_class: nil))
-      assert_equal Strict::Validators::AllOf, configuration.named!(:all_of).validator.class
-      assert_equal Strict::Validators::AnyOf, configuration.named!(:any_of).validator.class
-      assert_equal Strict::Validators::Anything, configuration.named!(:anything).validator.class
-      assert_equal Strict::Validators::ArrayOf, configuration.named!(:array_of).validator.class
-      assert_equal Strict::Validators::Boolean, configuration.named!(:boolean).validator.class
-      assert_equal Strict::Validators::HashOf, configuration.named!(:hash_of).validator.class
-      assert_equal Strict::Validators::RangeOf, configuration.named!(:range_of).validator.class
+      assert_instance_of Strict::Validators::AllOf, configuration.named!(:all_of).validator
+      assert_instance_of Strict::Validators::AnyOf, configuration.named!(:any_of).validator
+      assert_instance_of Strict::Validators::Anything, configuration.named!(:anything).validator
+      assert_instance_of Strict::Validators::ArrayOf, configuration.named!(:array_of).validator
+      assert_instance_of Strict::Validators::Boolean, configuration.named!(:boolean).validator
+      assert_instance_of Strict::Validators::HashOf, configuration.named!(:hash_of).validator
+      assert_instance_of Strict::Validators::RangeOf, configuration.named!(:range_of).validator
     end
 
     it "allows overwriting attributes" do

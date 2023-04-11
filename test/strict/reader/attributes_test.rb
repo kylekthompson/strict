@@ -18,7 +18,7 @@ end
 
 describe Strict::Reader::Attributes do
   it "exposes the configuration on the class" do
-    assert_equal Strict::Attributes::Configuration, ReaderClass.strict_attributes.class
+    assert_instance_of Strict::Attributes::Configuration, ReaderClass.strict_attributes
     assert_equal %i[foo bar baz], ReaderClass.strict_attributes.map(&:name)
   end
 
@@ -110,7 +110,7 @@ describe Strict::Reader::Attributes do
   it "exposes a coercer" do
     instance = ReaderClass.coercer.call(foo: 1, bar: "2", baz: "3")
 
-    assert_equal ReaderClass, instance.class
+    assert_instance_of ReaderClass, instance
     assert_equal 1, instance.foo
     assert_equal "2", instance.bar
     assert_equal "3", instance.baz
