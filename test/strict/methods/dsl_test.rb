@@ -46,14 +46,14 @@ describe Strict::Methods::Dsl do
       assert_equal %w[1 2], parameters.fetch(:coerce_array_with).coerce([1, 2])
       assert_equal({ one: 1 }, parameters.fetch(:coerce_hash).coerce([[:one, 1]]))
       assert_equal({ "one" => "1" }, parameters.fetch(:coerce_hash_with).coerce([[:one, 1]]))
-      assert_equal Strict::Validators::AllOf, parameters.fetch(:all_of).validator.class
-      assert_equal Strict::Validators::AnyOf, parameters.fetch(:any_of).validator.class
-      assert_equal Strict::Validators::Anything, parameters.fetch(:anything).validator.class
-      assert_equal Strict::Validators::ArrayOf, parameters.fetch(:array_of).validator.class
-      assert_equal Strict::Validators::Boolean, parameters.fetch(:boolean).validator.class
-      assert_equal Strict::Validators::HashOf, parameters.fetch(:hash_of).validator.class
-      assert_equal Strict::Validators::RangeOf, parameters.fetch(:range_of).validator.class
-      assert_equal Strict::Validators::Boolean, configuration.returns.validator.class
+      assert_instance_of Strict::Validators::AllOf, parameters.fetch(:all_of).validator
+      assert_instance_of Strict::Validators::AnyOf, parameters.fetch(:any_of).validator
+      assert_instance_of Strict::Validators::Anything, parameters.fetch(:anything).validator
+      assert_instance_of Strict::Validators::ArrayOf, parameters.fetch(:array_of).validator
+      assert_instance_of Strict::Validators::Boolean, parameters.fetch(:boolean).validator
+      assert_instance_of Strict::Validators::HashOf, parameters.fetch(:hash_of).validator
+      assert_instance_of Strict::Validators::RangeOf, parameters.fetch(:range_of).validator
+      assert_instance_of Strict::Validators::Boolean, configuration.returns.validator
     end
 
     it "allows overwriting parameters" do
@@ -82,7 +82,7 @@ describe Strict::Methods::Dsl do
       parameters = configuration.parameters.to_h { |p| [p.name, p] }
 
       assert_equal Integer, parameters.fetch(:returns).validator
-      assert_equal Strict::Validators::Boolean, configuration.returns.validator.class
+      assert_instance_of Strict::Validators::Boolean, configuration.returns.validator
     end
 
     it "defines returns as anything when not specified" do
@@ -90,7 +90,7 @@ describe Strict::Methods::Dsl do
         foo String
       end
 
-      assert_equal Strict::Validators::Anything, configuration.returns.validator.class
+      assert_instance_of Strict::Validators::Anything, configuration.returns.validator
     end
   end
 end

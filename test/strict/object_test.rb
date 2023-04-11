@@ -18,7 +18,7 @@ end
 
 describe Strict::Object do
   it "exposes the configuration on the class" do
-    assert_equal Strict::Attributes::Configuration, ObjectClass.strict_attributes.class
+    assert_instance_of Strict::Attributes::Configuration, ObjectClass.strict_attributes
     assert_equal %i[foo bar baz], ObjectClass.strict_attributes.map(&:name)
   end
 
@@ -126,7 +126,7 @@ describe Strict::Object do
   it "exposes a coercer" do
     instance = ObjectClass.coercer.call(foo: 1, bar: "2", baz: "3")
 
-    assert_equal ObjectClass, instance.class
+    assert_instance_of ObjectClass, instance
     assert_equal 1, instance.foo
     assert_equal "2", instance.bar
     assert_equal "3", instance.baz
