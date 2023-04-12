@@ -114,7 +114,7 @@ describe Strict::Attribute do
       attribute = Strict::Attribute.make(:attr_name, validator)
 
       refute validator.called
-      Strict.with_overrides(sample_ratio: 0) do
+      Strict.with_overrides(sample_rate: 0) do
         assert attribute.valid?(true)
         refute validator.called
         assert attribute.valid?(false)
@@ -125,7 +125,7 @@ describe Strict::Attribute do
         refute validator.called
       end
 
-      Strict.with_overrides(sample_ratio: 1) do
+      Strict.with_overrides(sample_rate: 1) do
         refute attribute.valid?(nil)
         assert validator.called
       end

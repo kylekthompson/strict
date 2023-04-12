@@ -17,8 +17,8 @@ describe Strict do
 
     refute_equal original_random, Strict.configuration.random
 
-    assert_equal 1, Strict.configuration.sample_ratio
-    Strict.with_overrides(sample_ratio: 0) do
+    assert_equal 1, Strict.configuration.sample_rate
+    Strict.with_overrides(sample_rate: 0) do
       current_random = Strict.configuration.random
       error = assert_raises(Strict::Error) do
         Strict.configure do |c|
@@ -29,12 +29,12 @@ describe Strict do
       assert_equal current_random, Strict.configuration.random
       assert_match(/cannot reconfigure overridden configuration/, error.message)
 
-      assert_equal 0, Strict.configuration.sample_ratio
-      Strict.with_overrides(sample_ratio: 0.5) do
-        assert_in_delta 0.5, Strict.configuration.sample_ratio
+      assert_equal 0, Strict.configuration.sample_rate
+      Strict.with_overrides(sample_rate: 0.5) do
+        assert_in_delta 0.5, Strict.configuration.sample_rate
       end
-      assert_equal 0, Strict.configuration.sample_ratio
+      assert_equal 0, Strict.configuration.sample_rate
     end
-    assert_equal 1, Strict.configuration.sample_ratio
+    assert_equal 1, Strict.configuration.sample_rate
   end
 end

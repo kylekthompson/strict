@@ -82,7 +82,7 @@ describe Strict::Return do
       returns = Strict::Return.make(validator)
 
       refute validator.called
-      Strict.with_overrides(sample_ratio: 0) do
+      Strict.with_overrides(sample_rate: 0) do
         assert returns.valid?(true)
         refute validator.called
         assert returns.valid?(false)
@@ -93,7 +93,7 @@ describe Strict::Return do
         refute validator.called
       end
 
-      Strict.with_overrides(sample_ratio: 1) do
+      Strict.with_overrides(sample_rate: 1) do
         refute returns.valid?(nil)
         assert validator.called
       end
