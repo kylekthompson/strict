@@ -100,6 +100,39 @@ describe Strict::Parameter do
       assert parameter.valid?(nil)
       refute parameter.valid?(1)
     end
+
+    it "does not call the validator if sampling indicates not to" do
+      validator = Class.new do
+        attr_accessor :called
+
+        def initialize
+          @called = false
+        end
+
+        def ===(value)
+          self.called = true
+          Strict::Validators::Boolean.instance === value
+        end
+      end.new
+      parameter = Strict::Parameter.make(:attr_name, validator)
+
+      refute validator.called
+      Strict.with_overrides(sample_rate: 0) do
+        assert parameter.valid?(true)
+        refute validator.called
+        assert parameter.valid?(false)
+        refute validator.called
+        assert parameter.valid?(nil)
+        refute validator.called
+        assert parameter.valid?(1)
+        refute validator.called
+      end
+
+      Strict.with_overrides(sample_rate: 1) do
+        refute parameter.valid?(nil)
+        assert validator.called
+      end
+    end
   end
 
   describe "#coerce" do

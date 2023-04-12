@@ -4,10 +4,10 @@ require "test_helper"
 require "securerandom"
 
 describe Strict::Configuration do
-  it "defaults to a sample_ratio of 1" do
+  it "defaults to a sample_rate of 1" do
     configuration = Strict::Configuration.new
 
-    assert_equal 1, configuration.sample_ratio
+    assert_equal 1, configuration.sample_rate
   end
 
   it "defaults to a new instance of Random" do
@@ -19,28 +19,28 @@ describe Strict::Configuration do
     refute_equal configuration_two.random, configuration_one.random
   end
 
-  describe "#sample_ratio=" do
-    it "ensures the ratio is between 0 and 1" do
+  describe "#sample_rate=" do
+    it "ensures the rate is between 0 and 1" do
       configuration = Strict::Configuration.new
 
-      configuration.sample_ratio = 0
+      configuration.sample_rate = 0
 
-      assert_equal 0, configuration.sample_ratio
+      assert_equal 0, configuration.sample_rate
 
-      configuration.sample_ratio = 1
+      configuration.sample_rate = 1
 
-      assert_equal 1, configuration.sample_ratio
+      assert_equal 1, configuration.sample_rate
 
-      configuration.sample_ratio = 0.5
+      configuration.sample_rate = 0.5
 
-      assert_in_delta 0.5, configuration.sample_ratio
+      assert_in_delta 0.5, configuration.sample_rate
 
       assert_raises Strict::Error do
-        configuration.sample_ratio = 1.1
+        configuration.sample_rate = 1.1
       end
 
       assert_raises Strict::Error do
-        configuration.sample_ratio = -0.1
+        configuration.sample_rate = -0.1
       end
     end
   end
@@ -65,25 +65,25 @@ describe Strict::Configuration do
   end
 
   describe "#validate?" do
-    it "is false when the sample ratio is 0" do
+    it "is false when the sample rate is 0" do
       configuration = Strict::Configuration.new
 
-      configuration.sample_ratio = 0
+      configuration.sample_rate = 0
 
       refute_predicate configuration, :validate?
     end
 
-    it "is true when the sample ratio is 1" do
+    it "is true when the sample rate is 1" do
       configuration = Strict::Configuration.new
 
-      configuration.sample_ratio = 1
+      configuration.sample_rate = 1
 
       assert_predicate configuration, :validate?
     end
 
-    it "is true roughly (sample_ratio * 100)% of the time" do
+    it "is true roughly (sample_rate * 100)% of the time" do
       configuration = Strict::Configuration.new
-      configuration.sample_ratio = 0.25
+      configuration.sample_rate = 0.25
 
       results = Hash.new { |h, k| h[k] = 0 }
       10_000.times do
@@ -101,7 +101,7 @@ describe Strict::Configuration do
       assert_equal(
         {
           random: configuration.random,
-          sample_ratio: configuration.sample_ratio
+          sample_rate: configuration.sample_rate
         },
         configuration.to_h
       )
