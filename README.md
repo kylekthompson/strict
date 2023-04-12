@@ -173,6 +173,54 @@ storage = Storage.new(Storages::Wat.new)
 # => Strict::ImplementationDoesNotConformError
 ```
 
+### Configuration
+
+Strict exposes some configuration options which can be configured globally via `Strict.configure { ... }` or overridden
+within a block via `Strict.with_overrides(...) { ... }`.
+
+#### Example
+
+```ruby
+# Globally
+
+Strict.configure do |c|
+  c.sample_rate = 0.75 # run validation ~75% of the time
+end
+
+Strict.configure do |c|
+  c.sample_rate = 0 # disable validation (Strict becomes Lenient)
+end
+
+Strict.configure do |c|
+  c.sample_rate = 0 # always run validation
+end
+
+# Locally within the block (only applies to the current thread)
+
+Strict.with_overrides(sample_rate: 0) do
+  # Use Strict as you normally would
+
+  Strict.with_overrides(sample_rate: 0.5) do
+    # Overrides can be nested
+  end
+end
+```
+
+#### `Strict.configuration.random`
+
+The instance of a `Random::Formatter` that Strict uses in tandom with the `sample_rate` to determine when validation
+should be checked.
+
+**Default**: `Random.new`
+
+#### `Strict.configuration.sample_rate`
+
+The rate of samples Strict will consider when validating attributes, parameters, and return values. A rate of 0.25 will
+validate roughly 25% of the time, a rate of 0 will disable validation entirely, and a rate of 1 will always
+run validations. The `sample_rate` is used in tandem with `random` to determine whether validation should be run.
+
+**Default**: 1
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
