@@ -65,6 +65,39 @@ describe Strict::Return do
       assert returns.valid?(nil)
       refute returns.valid?(1)
     end
+
+    it "does not call the validator if sampling indicates not to" do
+      validator = Class.new do
+        attr_accessor :called
+
+        def initialize
+          @called = false
+        end
+
+        def ===(value)
+          self.called = true
+          Strict::Validators::Boolean.instance === value
+        end
+      end.new
+      returns = Strict::Return.make(validator)
+
+      refute validator.called
+      Strict.with_overrides(sample_ratio: 0) do
+        assert returns.valid?(true)
+        refute validator.called
+        assert returns.valid?(false)
+        refute validator.called
+        assert returns.valid?(nil)
+        refute validator.called
+        assert returns.valid?(1)
+        refute validator.called
+      end
+
+      Strict.with_overrides(sample_ratio: 1) do
+        refute returns.valid?(nil)
+        assert validator.called
+      end
+    end
   end
 
   describe "#coerce" do

@@ -56,6 +56,8 @@ module Strict
     end
 
     def valid?(value)
+      return true unless Strict.configuration.validate?
+
       validator === value
     end
 
