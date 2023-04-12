@@ -9,26 +9,42 @@ module Strict
 
   class << self
     def configuration
-      @configuration ||= Strict::Configuration.new
+      thread_configuration || global_configuration
     end
 
     def configure
+      raise Strict::Error, "cannot reconfigure overridden configuration" if overridden?
+
       yield(configuration)
     end
 
     def with_overrides(**overrides)
-      original_configuration = configuration
+      original_thread_configuration = thread_configuration
 
       begin
-        self.configuration = Strict::Configuration.new(**original_configuration.to_h.merge(overrides))
+        self.thread_configuration = Strict::Configuration.new(**configuration.to_h.merge(overrides))
         yield
       ensure
-        self.configuration = original_configuration
+        self.thread_configuration = original_thread_configuration
       end
     end
 
     private
 
-    attr_writer :configuration
+    def overridden?
+      !!thread_configuration
+    end
+
+    def thread_configuration
+      Thread.current[:configuration]
+    end
+
+    def thread_configuration=(configuration)
+      Thread.current[:configuration] = configuration
+    end
+
+    def global_configuration
+      @global_configuration ||= Strict::Configuration.new
+    end
   end
 end
