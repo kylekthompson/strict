@@ -9,16 +9,16 @@ describe Strict::Validators::Boolean do
     end
 
     it "validates true" do
-      assert @boolean === true
+      assert_operator @boolean, :===, true
     end
 
     it "validates false" do
-      assert @boolean === false
+      assert_operator @boolean, :===, false
     end
 
     it "does not validate objects that are not booleans" do
-      refute @boolean === 1
-      refute @boolean === "string"
+      refute_operator @boolean, :===, 1
+      refute_operator @boolean, :===, "string"
     end
   end
 

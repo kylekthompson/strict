@@ -7,11 +7,11 @@ describe Strict::Validators::Anything do
     it "validates anything" do
       anything = Strict::Validators::Anything.instance
 
-      assert anything === 1
-      assert anything === true
-      assert anything === {}
-      assert anything === "something"
-      assert anything === Strict
+      assert_operator anything, :===, 1
+      assert_operator anything, :===, true
+      assert_operator anything, :===, {}
+      assert_operator anything, :===, "something"
+      assert_operator anything, :===, Strict
     end
   end
 

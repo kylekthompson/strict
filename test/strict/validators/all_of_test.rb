@@ -21,19 +21,19 @@ describe Strict::Validators::AllOf do
     it "validates when all subvalidators validate" do
       all_of = Strict::Validators::AllOf.new(@validates, @validates, @validates)
 
-      assert all_of === @value
+      assert_operator all_of, :===, @value
     end
 
     it "does not validate when some subvalidators validate" do
       all_of = Strict::Validators::AllOf.new(@validates, @invalidates, @validates)
 
-      refute all_of === @value
+      refute_operator all_of, :===, @value
     end
 
     it "does not validate when no subvalidators validate" do
       all_of = Strict::Validators::AllOf.new(@invalidates, @invalidates, @invalidates)
 
-      refute all_of === @value
+      refute_operator all_of, :===, @value
     end
   end
 
