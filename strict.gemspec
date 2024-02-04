@@ -30,12 +30,4 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "zeitwerk", "~> 2.6"
-  spec.add_development_dependency "debug", ">= 1.0.0"
-  spec.add_development_dependency "gem-release", "~> 2.2"
-  spec.add_development_dependency "minitest", "~> 5.0"
-  spec.add_development_dependency "minitest-spec-context", "~> 0.0.4"
-  spec.add_development_dependency "rake", "~> 13.0"
-  spec.add_development_dependency "rubocop", "~> 1.21"
-  spec.add_development_dependency "rubocop-minitest", "~> 0.22"
-  spec.add_development_dependency "rubocop-rake", "~> 0.6"
 end

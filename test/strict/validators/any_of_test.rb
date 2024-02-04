@@ -21,19 +21,19 @@ describe Strict::Validators::AnyOf do
     it "validates when all subvalidators validate" do
       any_of = Strict::Validators::AnyOf.new(@validates, @validates, @validates)
 
-      assert any_of === @value
+      assert_operator any_of, :===, @value
     end
 
     it "validates when some subvalidators validate" do
       any_of = Strict::Validators::AnyOf.new(@validates, @invalidates, @validates)
 
-      assert any_of === @value
+      assert_operator any_of, :===, @value
     end
 
     it "does not validate when no subvalidators validate" do
       any_of = Strict::Validators::AnyOf.new(@invalidates, @invalidates, @invalidates)
 
-      refute any_of === @value
+      refute_operator any_of, :===, @value
     end
   end
 

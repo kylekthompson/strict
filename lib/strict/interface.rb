@@ -11,6 +11,7 @@ module Strict
       Interfaces::Coercer.new(self)
     end
 
+    # rubocop:disable Metrics/MethodLength
     def expose(method_name, &block)
       sig = sig(&block)
       parameter_list = [
@@ -28,5 +29,6 @@ module Strict
         end                                                # end
       RUBY
     end
+    # rubocop:enable Metrics/MethodLength
   end
 end
