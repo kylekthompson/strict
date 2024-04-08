@@ -10,7 +10,7 @@ group :development do
   gem "gem-release", "~> 2.2"
   gem "minitest", "~> 5.0"
   gem "minitest-spec-context", "~> 0.0.4"
-  gem "rake", "~> 13.0"
+  gem "rake", "~> 13.2"
   gem "rubocop", "~> 1.21"
   gem "rubocop-minitest", "~> 0.22"
   gem "rubocop-rake", "~> 0.6"

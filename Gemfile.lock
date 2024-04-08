@@ -28,7 +28,7 @@ GEM
       stringio
     racc (1.7.3)
     rainbow (3.1.1)
-    rake (13.1.0)
+    rake (13.2.1)
     rdoc (6.6.2)
       psych (>= 4.0.0)
     regexp_parser (2.9.0)
@@ -67,7 +67,7 @@ DEPENDENCIES
   gem-release (~> 2.2)
   minitest (~> 5.0)
   minitest-spec-context (~> 0.0.4)
-  rake (~> 13.0)
+  rake (~> 13.2)
   rubocop (~> 1.21)
   rubocop-minitest (~> 0.22)
   rubocop-rake (~> 0.6)
