@@ -192,7 +192,7 @@ Strict.configure do |c|
 end
 
 Strict.configure do |c|
-  c.sample_rate = 0 # always run validation
+  c.sample_rate = 1 # always run validation
 end
 
 # Locally within the block (only applies to the current thread)
