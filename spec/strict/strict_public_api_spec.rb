@@ -436,6 +436,31 @@ RSpec.describe Strict do
       expect(described_class.configuration.sample_rate).to eq(original_sample_rate)
     end
 
+    it "isolates overrides from application thread-local configuration" do
+      global_configuration = described_class.configuration
+      application_configuration = Object.new
+      original_application_configuration = Thread.current[:configuration]
+      Thread.current[:configuration] = application_configuration
+
+      begin
+        expect(described_class.configuration).to be(global_configuration)
+        expect(described_class.configure { |configuration| configuration }).to be(global_configuration)
+
+        described_class.with_overrides(sample_rate: 0) do
+          expect(described_class.configuration.sample_rate).to eq(0)
+          described_class.with_overrides(sample_rate: 0.5) do
+            expect(described_class.configuration.sample_rate).to eq(0.5)
+          end
+          expect(described_class.configuration.sample_rate).to eq(0)
+        end
+
+        expect(described_class.configuration).to be(global_configuration)
+        expect(Thread.current[:configuration]).to be(application_configuration)
+      ensure
+        Thread.current[:configuration] = original_application_configuration
+      end
+    end
+
     it "runs coercion while sampling validator calls out" do
       validator_calls = 0
       coercer_calls = 0
