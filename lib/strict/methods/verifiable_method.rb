@@ -1,11 +1,27 @@
 # frozen_string_literal: true
 
-require "forwardable"
-
 module Strict
   module Methods
     class VerifiableMethod # rubocop:disable Metrics/ClassLength
-      extend Forwardable
+      class << self
+        def from_method(method:, configuration:, instance:)
+          new(
+            method: method,
+            configuration: configuration,
+            instance: instance
+          )
+        end
+
+        def for_interface(owner:, name:, configuration:)
+          new(
+            method: nil,
+            owner: owner,
+            name: name,
+            configuration: configuration,
+            instance: true
+          )
+        end
+      end
 
       class UnknownParameterError < Error
         attr_reader :parameter_name
@@ -24,25 +40,36 @@ module Strict
         end
       end
 
-      def_delegator :method, :name
-
       attr_reader :parameters, :returns
 
-      def initialize(method:, parameters:, returns:, instance:)
+      def initialize(method:, configuration:, instance:, owner: nil, name: nil)
         @method = method
-        @parameters = parameters
-        @parameters_index = parameters.to_h { |p| [p.name, p] }
-        @returns = returns
+        @parameters = configuration.parameters
+        @parameters_index = parameters.to_h { |parameter| [parameter.name, parameter] }
+        @returns = configuration.returns
         @instance = instance
-        @parameter_bindings = compile_parameter_bindings
+        compile_invocation(invocation_parameters_for(method))
+        return if method
+
+        @owner = owner
+        @name = name
+      end
+
+      def compile_invocation(invocation_parameters)
+        @parameter_bindings = compile_parameter_bindings(invocation_parameters)
         @keyword_parameter_names = parameter_bindings.filter_map do |binding|
           binding.name if binding.kind == :keyword
         end.freeze
         @accepts_keyrest = parameter_bindings.any? { |binding| binding.kind == :keyrest }
       end
+      private :compile_invocation
+
+      def name
+        method ? method.name : @name
+      end
 
       def to_s
-        "#{method.owner}#{separator}#{name}"
+        "#{owner}#{separator}#{name}"
       end
 
       def verify_definition!
@@ -189,10 +216,20 @@ module Strict
 
       attr_reader :method, :parameters_index, :parameter_bindings, :keyword_parameter_names
 
+      def owner
+        method ? method.owner : @owner
+      end
+
+      def invocation_parameters_for(method)
+        return method.parameters if method
+
+        parameters.map { |parameter| [:keyreq, parameter.name] }
+      end
+
       # rubocop:disable Metrics/MethodLength
-      def compile_parameter_bindings
+      def compile_parameter_bindings(invocation_parameters)
         required_after = 0
-        method.parameters.reverse_each.filter_map do |kind, name|
+        invocation_parameters.reverse_each.filter_map do |kind, name|
           compiled_kind = PARAMETER_KINDS[kind]
           next unless compiled_kind
 

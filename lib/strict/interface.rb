@@ -13,24 +13,18 @@ module Strict
         Interfaces::Coercer.new(self)
       end
 
-      # rubocop:disable Metrics/MethodLength
       def expose(method_name, &)
-        sig = sig(&)
-        parameter_list = [
-          *sig.parameters.map { |parameter| "#{parameter.name}:" },
-          "&block"
-        ].join(", ")
-        argument_list = sig.parameters.map do |parameter|
-          "#{parameter.name.inspect} => binding.local_variable_get(#{parameter.name.inspect})"
-        end.join(", ")
+        method_name = method_name.to_sym
+        configuration = Methods::Dsl.run(&)
+        verifiable_method = Methods::VerifiableMethod.for_interface(
+          owner: self,
+          name: method_name,
+          configuration: configuration
+        )
 
-        module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
-          def #{method_name}(#{parameter_list})                                            # def method_name(one:, two:, &block)
-            implementation.public_send(#{method_name.inspect}, **{#{argument_list}}, &block) #   implementation.public_send(:method_name, **arguments, &block)
-          end                                                                              # end
-        RUBY
+        strict_instance_methods[method_name] = verifiable_method
+        strict_method_wrapper(self).wrap(verifiable_method, invocation_target: :implementation)
       end
-      # rubocop:enable Metrics/MethodLength
     end
   end
 end

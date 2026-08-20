@@ -5,10 +5,14 @@ require "spec_helper"
 RSpec.describe Strict::MethodCallError do
   describe ".new" do
     let(:verifiable_method) do
-      Strict::Methods::VerifiableMethod.new(
-        method: Strict::Methods::VerifiableMethod.instance_method(:instance?),
+      method = Strict::Methods::VerifiableMethod.instance_method(:instance?)
+      configuration = Strict::Methods::Configuration.new(
         parameters: [],
-        returns: [],
+        returns: []
+      )
+      Strict::Methods::VerifiableMethod.from_method(
+        method: method,
+        configuration: configuration,
         instance: true
       )
     end
