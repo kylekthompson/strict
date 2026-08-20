@@ -266,6 +266,28 @@ RSpec.describe Strict do
       expect { inherited_class.new.call("1") }.to raise_error(Strict::MethodCallError)
       expect(overridden_class.new.call("1")).to eq("1")
     end
+
+    it "keeps inherited signed singleton methods validated and treats unsigned overrides normally" do
+      parent_class = Class.new do
+        include Strict::Method
+
+        sig do
+          value Integer
+          returns Integer
+        end
+        def self.call(value) = value
+      end
+      inherited_class = Class.new(parent_class)
+      overridden_class = Class.new(parent_class) do
+        class << self
+          def call(value) = value
+        end
+      end
+
+      expect(inherited_class.call(1)).to eq(1)
+      expect { inherited_class.call("1") }.to raise_error(Strict::MethodCallError)
+      expect(overridden_class.call("1")).to eq("1")
+    end
   end
 
   describe "interfaces" do
