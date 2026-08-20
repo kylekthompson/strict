@@ -85,6 +85,30 @@ RSpec.describe Strict::Interface do
       }
     end
 
+    it "preserves the conformance error payload" do
+      implementation = InterfaceTest::BadImplementation.new
+
+      expect do
+        InterfaceTest::Interface.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.interface).to be(InterfaceTest::Interface)
+        expect(error.receiver).to be(implementation)
+        expect(error.missing_methods).to eq(%i[third_method no_params])
+        expect(error.invalid_method_definitions).to eq(
+          first_method: {
+            additional_parameters: [:extra],
+            missing_parameters: [],
+            non_keyword_parameters: [:foo]
+          },
+          second_method: {
+            additional_parameters: [],
+            missing_parameters: Set[:bat],
+            non_keyword_parameters: []
+          }
+        )
+      }
+    end
+
     it "does not raise when given a good implementation" do
       interface = InterfaceTest::Interface.new(InterfaceTest::GoodImplementation.new)
 
@@ -124,12 +148,45 @@ RSpec.describe Strict::Interface do
       end.to raise_error(Strict::ImplementationDoesNotConformError)
     end
 
+    it "raises when an explicit keyword parameter is optional" do
+      implementation = Class.new do
+        def call(one:, two: nil); end
+      end.new
+
+      expect do
+        interface_class.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.invalid_method_definitions).to eq(
+          call: {
+            additional_parameters: [],
+            missing_parameters: [],
+            non_keyword_parameters: [:two]
+          }
+        )
+      }
+    end
+
     it "raises when missing a method" do
       expect do
         interface_class.new(
           Class.new.new
         )
       end.to raise_error(Strict::ImplementationDoesNotConformError)
+    end
+
+    it "treats a non-public exposed method as missing" do
+      implementation = Class.new do
+        private
+
+        def call(one:, two:); end
+      end.new
+
+      expect do
+        interface_class.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.missing_methods).to eq([:call])
+        expect(error.invalid_method_definitions).to be_empty
+      }
     end
 
     it "does not raise when other methods are defined" do
@@ -163,6 +220,24 @@ RSpec.describe Strict::Interface do
       end.not_to raise_error
     end
 
+    it "rejects an additional explicit parameter when keywords are splatted" do
+      implementation = Class.new do
+        def call(one:, three:, **kwargs); end
+      end.new
+
+      expect do
+        interface_class.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.invalid_method_definitions).to eq(
+          call: {
+            additional_parameters: [:three],
+            missing_parameters: [],
+            non_keyword_parameters: []
+          }
+        )
+      }
+    end
+
     it "does not raise when non-keyword args are entirely splatted" do
       expect do
         interface_class.new(
@@ -191,6 +266,28 @@ RSpec.describe Strict::Interface do
           end.new
         )
       end.not_to raise_error
+    end
+
+    it "inspects singleton methods again for each receiver wrapping" do
+      implementation = Object.new
+      implementation.define_singleton_method(:call) { |one:, two:| one || two }
+
+      expect { interface_class.new(implementation) }.not_to raise_error
+
+      implementation.define_singleton_method(:call) { |one:| one }
+
+      expect do
+        interface_class.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.receiver).to be(implementation)
+        expect(error.invalid_method_definitions).to eq(
+          call: {
+            additional_parameters: [],
+            missing_parameters: Set[:two],
+            non_keyword_parameters: []
+          }
+        )
+      }
     end
   end
 

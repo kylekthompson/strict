@@ -144,12 +144,14 @@ module StrictBenchmark
       equal_value = Value.new(id: 1, name: "Strict", active: true)
       mutable = Mutable.new(value: 1)
       verified_method = VerifiedMethod.new
-      interface = Interface.new(Implementation.new)
+      implementation = Implementation.new
+      interface = Interface.new(implementation)
 
       [
         BenchmarkCase.new("value initialization", -> { Value.new(id: 1, name: "Strict", active: true) }),
         BenchmarkCase.new("mutable assignment", -> { mutable.value = 1 }),
         BenchmarkCase.new("verified method call", -> { verified_method.call(value: 1) }),
+        BenchmarkCase.new("interface construction", -> { Interface.new(implementation) }),
         BenchmarkCase.new("interface call", -> { interface.call(value: 1) }),
         BenchmarkCase.new("to_h", -> { value.to_h }),
         BenchmarkCase.new("equality", -> { value == equal_value }),
