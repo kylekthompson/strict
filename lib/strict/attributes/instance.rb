@@ -5,13 +5,14 @@ module Strict
     module Instance
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       def initialize(**attributes)
-        remaining_attributes = Set.new(attributes.keys)
+        initializable_class = self.class
+        configuration = Strict.configuration
         invalid_attributes = nil
         missing_attributes = nil
 
-        self.class.strict_attributes.each do |attribute|
-          if remaining_attributes.delete?(attribute.name)
-            value = attributes.fetch(attribute.name)
+        initializable_class.strict_attributes.each do |attribute|
+          if attributes.key?(attribute.name)
+            value = attributes.delete(attribute.name)
           elsif attribute.optional?
             value = attribute.default_generator.call
           else
@@ -20,8 +21,8 @@ module Strict
             next
           end
 
-          value = attribute.coerce(value, for_class: self.class)
-          if attribute.valid?(value)
+          value = attribute.coerce(value, for_class: initializable_class)
+          if attribute.valid?(value, configuration)
             instance_variable_set(attribute.instance_variable, value)
           else
             invalid_attributes ||= {}
@@ -29,11 +30,11 @@ module Strict
           end
         end
 
-        return if remaining_attributes.none? && invalid_attributes.nil? && missing_attributes.nil?
+        return if attributes.empty? && invalid_attributes.nil? && missing_attributes.nil?
 
         raise InitializationError.new(
-          initializable_class: self.class,
-          remaining_attributes: remaining_attributes,
+          initializable_class: initializable_class,
+          remaining_attributes: Set.new(attributes.keys),
           invalid_attributes: invalid_attributes,
           missing_attributes: missing_attributes
         )
