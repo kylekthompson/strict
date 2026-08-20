@@ -3,16 +3,17 @@
 module Strict
   class Return
     class << self
-      def make(validator = Validators::Anything.instance, coerce: false)
-        new(validator: validator, coercer: coerce)
+      def make(validator = Validators::Anything.instance, **unsupported)
+        raise ArgumentError, "Unsupported return options: #{unsupported.keys.join(', ')}" if unsupported.any?
+
+        new(validator: validator)
       end
     end
 
-    attr_reader :validator, :coercer
+    attr_reader :validator
 
-    def initialize(validator:, coercer:)
+    def initialize(validator:)
       @validator = validator
-      @coercer = coercer
       @detailed_validator = DetailedValidator === validator
     end
 
@@ -26,12 +27,6 @@ module Strict
       return Validation::NONE if validator === value
 
       Validation.invalid(validator, value)
-    end
-
-    def coerce(value)
-      return value unless coercer
-
-      coercer.call(value)
     end
   end
 end

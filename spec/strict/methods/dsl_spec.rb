@@ -92,5 +92,11 @@ RSpec.describe Strict::Methods::Dsl do
 
       expect(configuration.returns.validator).to be_an_instance_of(Strict::Validators::Anything)
     end
+
+    it "rejects return coercion" do
+      expect do
+        described_class.run { returns String, coerce: ->(value) { value.to_s } }
+      end.to raise_error(ArgumentError)
+    end
   end
 end

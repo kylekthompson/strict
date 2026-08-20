@@ -208,7 +208,6 @@ module Strict
       # rubocop:enable Metrics/AbcSize, Metrics/BlockLength, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
       def verify_returns!(value, configuration)
-        value = returns.coerce(value)
         violations = returns.violations(value, configuration)
         return if violations.empty?
 

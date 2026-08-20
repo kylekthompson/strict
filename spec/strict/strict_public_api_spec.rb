@@ -441,6 +441,28 @@ RSpec.describe Strict do
       expect { inherited_class.call("1") }.to raise_error(Strict::MethodCallError)
       expect(overridden_class.call("1")).to eq("1")
     end
+
+    it "validates and preserves the exact returned object" do
+      returned = Object.new
+      method_class = Class.new do
+        include Strict::Method
+
+        sig { returns Object }
+        define_method(:call) { returned }
+      end
+
+      expect(method_class.new.call).to be(returned)
+    end
+
+    it "rejects return coercion when declaring the signature" do
+      expect do
+        Class.new do
+          include Strict::Method
+
+          sig { returns String, coerce: ->(value) { value.to_s } }
+        end
+      end.to raise_error(ArgumentError)
+    end
   end
 
   describe "interfaces" do
@@ -692,17 +714,21 @@ RSpec.describe Strict do
       }
     end
 
-    it "exposes the invalid return value" do
+    it "exposes the original invalid return value and violation" do
+      returned = Object.new
       method_class = Class.new do
         include Strict::Method
 
         sig { returns String }
-        def call = 1
+        define_method(:call) { returned }
       end
 
       expect do
         method_class.new.call
-      end.to raise_error(Strict::MethodReturnError) { |error| expect(error.value).to eq(1) }
+      end.to raise_error(Strict::MethodReturnError) { |error|
+        expect(error.value).to be(returned)
+        expect(error.violations.fetch(0).value).to be(returned)
+      }
     end
   end
 end
