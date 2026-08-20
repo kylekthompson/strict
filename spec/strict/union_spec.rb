@@ -82,19 +82,21 @@ RSpec.describe Strict::Union do
 
   it "keeps each variant discriminator fixed" do
     authorized = union_class::Authorized.new(
-      status: :authorized,
+      status: "authorized",
       authorization_id: "auth_123",
       amount_in_cents: 1_000
     )
 
     expect(authorized.status).to eq(:authorized)
     expect do
-      union_class::Authorized.new(
-        status: :declined,
-        authorization_id: "auth_123",
-        amount_in_cents: 1_000
-      )
-    end.to raise_error(Strict::InitializationError)
+      Strict.with_overrides(sample_rate: 0) do
+        union_class::Authorized.new(
+          status: :declined,
+          authorization_id: "auth_123",
+          amount_in_cents: 1_000
+        )
+      end
+    end.to raise_error(ArgumentError, /discriminator :status must equal :authorized/)
   end
 
   it "supports standard Ruby class and attribute patterns" do

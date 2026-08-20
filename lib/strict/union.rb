@@ -56,8 +56,9 @@ module Strict
       def strict_union_build_variant(discriminator, tag, definition)
         variant_class = Class.new(self)
         variant_class.include(Strict::Value)
+        discriminator_coercer = strict_union_discriminator_coercer(discriminator, tag)
         variant_class.attributes do
-          strict_attribute discriminator, tag, default_value: tag
+          strict_attribute discriminator, tag, default_value: tag, coerce: discriminator_coercer
           discriminator_attribute = __strict_dsl_internal_attributes.fetch(discriminator)
           instance_exec(&definition)
           unless __strict_dsl_internal_attributes.fetch(discriminator).equal?(discriminator_attribute)
@@ -68,6 +69,17 @@ module Strict
         variant_class
       end
       # rubocop:enable Metrics/MethodLength
+
+      def strict_union_discriminator_coercer(discriminator, tag)
+        lambda do |value|
+          canonical_value = value.is_a?(::String) ? value.to_sym : value
+          unless canonical_value.eql?(tag)
+            raise ArgumentError, "discriminator #{discriminator.inspect} must equal #{tag.inspect}"
+          end
+
+          tag
+        end
+      end
 
       def strict_union_constant_name(tag)
         name = tag.to_s
