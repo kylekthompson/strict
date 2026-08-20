@@ -402,7 +402,7 @@ Strict.configure do |c|
   c.sample_rate = 1 # always run validation
 end
 
-# Locally within the block (only applies to the current thread)
+# Locally within the block (only applies to the current execution context)
 
 Strict.with_overrides(sample_rate: 0) do
   # Use Strict as you normally would
@@ -412,6 +412,9 @@ Strict.with_overrides(sample_rate: 0) do
   end
 end
 ```
+
+Overrides are local to the current execution context (fiber). They can be nested and are restored when a block returns
+or raises. Neither a newly created fiber nor a new thread inherits an active override.
 
 #### `Strict.configuration.random`
 

@@ -530,7 +530,7 @@ RSpec.describe Strict do
       expect(thread_sample_rate).to eq(original_sample_rate)
     end
 
-    it "isolates overrides from application thread-local configuration" do
+    it "isolates overrides from application execution-context storage" do
       global_configuration = described_class.configuration
       application_configuration = Object.new
       original_application_configuration = Thread.current[:configuration]

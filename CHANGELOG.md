@@ -22,7 +22,7 @@
 - Require interface implementations to cover every distinct exposed keyword parameter.
 - Reduce value and object hot-path allocations during initialization, `to_h`, equality, and hashing.
 - Share declaration invariants between attributes and parameters, with isolated backing storage for every distinct attribute name.
-- Keep Strict configuration overrides in isolated internal thread-local storage to avoid collisions with application keys.
+- Keep Strict configuration overrides in isolated internal execution-context storage to avoid collisions with application keys.
 - Generate attribute readers and writers through one shared implementation, with mutable writers bound directly to their declarations.
 
 ### Performance
