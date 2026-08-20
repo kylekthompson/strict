@@ -103,6 +103,24 @@ RSpec.describe Strict do
       expect(value_with_overridden_reader).to eql(equal_value)
       expect(value_with_overridden_reader.hash).to eq(equal_value.hash)
     end
+
+    it "stores attribute names with the same stem independently" do
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          strict_attribute :value, String
+          strict_attribute :value?, Integer
+          strict_attribute :value!, Symbol
+        end
+      end
+      value = value_class.new(value: "plain", value?: 1, value!: :dangerous)
+
+      expect(value.value).to eq("plain")
+      expect(value.value?).to eq(1)
+      expect(value.value!).to eq(:dangerous)
+      expect(value.to_h).to eq(value: "plain", value?: 1, value!: :dangerous)
+    end
   end
 
   describe "objects" do
@@ -127,6 +145,30 @@ RSpec.describe Strict do
       expect do
         object.public_send(:"active?=", "no")
       end.to raise_error(Strict::AssignmentError) { |error| expect(error.value).to eq("no") }
+    end
+
+    it "stores attribute names with the same stem independently" do
+      object_class = Class.new do
+        include Strict::Object
+
+        attributes do
+          strict_attribute :value, String
+          strict_attribute :value?, Integer
+          strict_attribute :value!, Symbol
+        end
+      end
+      object = object_class.new(value: "plain", value?: 1, value!: :dangerous)
+
+      expect(object.to_h).to eq(value: "plain", value?: 1, value!: :dangerous)
+
+      object.value = "changed"
+      object.public_send(:"value?=", 2)
+      object.public_send(:"value!=", :changed)
+
+      expect(object.value).to eq("changed")
+      expect(object.value?).to eq(2)
+      expect(object.value!).to eq(:changed)
+      expect(object.to_h).to eq(value: "changed", value?: 2, value!: :changed)
     end
   end
 
