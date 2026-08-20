@@ -1,6 +1,7 @@
 plugins:
-  - rubocop-minitest
+  - rubocop-factory_bot
   - rubocop-rake
+  - rubocop-rspec
 
 AllCops:
   NewCops: enable
@@ -20,5 +21,11 @@ Style/SymbolProc:
 
 Metrics/BlockLength:
    Exclude:
-    - "test/**/*"
+    - "spec/**/*"
     - "*.gemspec"
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
