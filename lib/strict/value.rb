@@ -3,7 +3,7 @@
 module Strict
   module Value
     def self.included(mod)
-      mod.extend(Reader::Attributes)
+      Attributes::GeneratedMethods.install_on(mod, writable: false)
     end
 
     def with(**attributes)

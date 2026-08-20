@@ -3,7 +3,7 @@
 module Strict
   module Object
     def self.included(mod)
-      mod.extend(Accessor::Attributes)
+      Attributes::GeneratedMethods.install_on(mod, writable: true)
     end
   end
 end
