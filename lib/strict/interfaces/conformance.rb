@@ -13,7 +13,8 @@ module Strict
 
         method_expectations << MethodExpectation.new(
           name: verifiable_method.name,
-          parameter_names: parameter_names
+          parameter_names: parameter_names,
+          expected_parameter_mask: (1 << parameter_names.length) - 1
         )
       end
 
@@ -32,7 +33,7 @@ module Strict
 
       private
 
-      MethodExpectation = Data.define(:name, :parameter_names)
+      MethodExpectation = Data.define(:name, :parameter_names, :expected_parameter_mask)
       private_constant :MethodExpectation
 
       attr_reader :interface, :method_expectations
@@ -63,7 +64,7 @@ module Strict
 
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       def invalid_definition_for(expectation, implementation_parameters)
-        defined_parameter_count = 0
+        matched_parameter_mask = 0
         has_keyword_splat = false
         additional_parameters = nil
         non_keyword_parameters = nil
@@ -77,22 +78,17 @@ module Strict
             next
           end
 
-          unless expectation.parameter_names.include?(parameter_name)
+          parameter_index = expectation.parameter_names.index(parameter_name)
+          unless parameter_index
             (additional_parameters ||= []) << parameter_name
             next
           end
 
-          defined_parameter_count += 1
+          matched_parameter_mask |= 1 << parameter_index
           (non_keyword_parameters ||= []) << parameter_name unless kind == :keyreq
         end
 
-        unless has_keyword_splat
-          missing_parameters = missing_parameters_from(
-            expectation,
-            implementation_parameters,
-            defined_parameter_count
-          )
-        end
+        missing_parameters = missing_parameters_from(expectation, matched_parameter_mask) unless has_keyword_splat
         return unless missing_parameters || additional_parameters || non_keyword_parameters
 
         {
@@ -103,12 +99,12 @@ module Strict
       end
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
-      def missing_parameters_from(expectation, implementation_parameters, defined_parameter_count)
-        return if defined_parameter_count == expectation.parameter_names.length
+      def missing_parameters_from(expectation, matched_parameter_mask)
+        return if matched_parameter_mask == expectation.expected_parameter_mask
 
-        Set.new(expectation.parameter_names).tap do |missing_parameters|
-          implementation_parameters.each do |kind, parameter_name|
-            missing_parameters.delete(parameter_name) unless %i[block rest keyrest].include?(kind)
+        Set.new.tap do |missing_parameters|
+          expectation.parameter_names.each_with_index do |parameter_name, index|
+            missing_parameters << parameter_name if matched_parameter_mask.nobits?(1 << index)
           end
         end
       end

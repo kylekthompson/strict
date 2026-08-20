@@ -36,6 +36,47 @@ RSpec.describe Strict::Method do
     expect(instance.call(1, 2, 3, two: 2.2, other: 1)).to eq([1, [2, 3], 2.2, { other: 1 }])
   end
 
+  it "keeps an explicit keyword when keyrest coercion creates the same name" do
+    instance = Class.new do
+      include Strict::Method
+
+      sig do
+        value Integer, coerce: ->(argument) { argument.to_i }
+        options Hash, coerce: ToHash(with_keys: ->(key) { key.to_sym })
+        returns Array
+      end
+      def call(value:, **options) = [value, options]
+    end.new
+
+    result = instance.call(value: "1", **{ "value" => "unvalidated", "other" => 2 })
+
+    expect(result).to eq([1, { other: 2 }])
+  end
+
+  it "keeps explicit keywords when a keyrest validator adds the same names" do
+    validator = Object.new
+    validator.define_singleton_method(:===) do |options|
+      options[:value] = "unvalidated"
+      options[:fallback] = "unvalidated"
+      true
+    end
+    instance = Class.new do
+      include Strict::Method
+
+      sig do
+        value Integer
+        fallback Integer, default: 2
+        options validator
+        returns Array
+      end
+      def call(value:, fallback:, **options) = [value, fallback, options]
+    end.new
+
+    result = instance.call(value: 1, untouched: true)
+
+    expect(result).to eq([1, 2, { untouched: true }])
+  end
+
   it "forwards cardinality changes from an in-place rest coercion" do
     replacements = [[9], [9, 10, 11]]
     coercer = ->(values) { values.replace(replacements.shift) }

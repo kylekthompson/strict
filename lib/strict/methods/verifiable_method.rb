@@ -277,9 +277,11 @@ module Strict
         return value if keyword_parameter_names.empty? && !value.equal?(kwargs)
         return verified_kwargs if keyword_parameter_names.empty?
 
-        (verified_kwargs || kwargs.dup).delete_if do |name, _value|
+        merged_kwargs = verified_kwargs || kwargs.dup
+        merged_kwargs.delete_if do |name, _value|
           !keyword_parameter_names.include?(name)
-        end.merge!(value)
+        end
+        merged_kwargs.merge!(value) { |_name, explicit_value, _keyrest_value| explicit_value }
       end
 
       def no_additional_keywords?(kwargs)
