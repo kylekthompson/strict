@@ -67,7 +67,10 @@ Only one default option can be present on one declaration.
 
 - a callable;
 - a class method name as a symbol;
-- `true`, which calls the class method `coerce_<attribute>`.
+- `true`, which calls the class method `coerce_<attribute>`;
+- `false`, which disables coercion inherited from the validator.
+
+When `coerce:` is omitted and the validator responds to `coercer`, Strict uses `validator.coercer`.
 
 The generated class `coercer` returns `nil`, non-hash-like values, and instances of that exact class unchanged. A subclass instance is not an exact-class match: a parent class coercer treats it as hash-like input and creates a new parent instance from the parent's declared attributes. For other hash-like input, the coercer recognizes declared symbol or string keys and initializes the class with those values.
 
@@ -132,11 +135,11 @@ The union class `coercer`:
 - dispatches hash-like input through the selected variant's value coercer;
 - raises `ArgumentError` when the discriminator is missing or unknown.
 
-A union class can be an attribute or method validator. Add its coercer when the declaration must also accept hash-like input:
+A union class can be an attribute or method validator. Declarations use its coercer automatically, so they accept hash-like input unless coercion is disabled:
 
 ```ruby
 payment_result PaymentResult
-coerced_payment_result PaymentResult, coerce: PaymentResult.coercer
+strict_payment_result PaymentResult, coerce: false
 ```
 
 Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid variant name or tag, replacing an existing generated constant, declaring multiple union or variant attribute blocks, declaring union attributes after a variant, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
@@ -173,6 +176,8 @@ Interface instances expose their `implementation`. The class coercer:
 - returns `nil` unchanged;
 - returns an instance of that exact interface unchanged;
 - otherwise wraps the value and checks conformance.
+
+When an interface class is an attribute or parameter validator, declarations use this coercer automatically.
 
 Interface subclassing and re-exposing a method are outside the compatibility boundary.
 
@@ -221,6 +226,8 @@ classes, RSpec proxy metadata, and reflection details are outside the compatibil
 ## Validators and coercers
 
 Any object that implements `===` can be a validator. This includes classes, modules, literals, and custom validators. When a validator rejects a value, Strict reports that validator in one `:invalid` violation at the current path.
+
+Attribute and parameter declarations automatically use `validator.coercer` when the validator responds to `coercer`. An explicit `coerce:` value takes precedence, and `coerce: false` disables this automatic coercion.
 
 A custom validator can opt into nested structured failures by including `Strict::DetailedValidator` and implementing `violations(value)`. The method must return an array of `Strict::Violation` records and return an empty array when the value is valid. Each violation path is relative to the validated value; Strict prefixes paths when the validator is nested inside a declaration or a built-in detailed validator. `Strict::DetailedValidator` implements `===` from `violations`, so the custom validator does not need to implement both methods.
 

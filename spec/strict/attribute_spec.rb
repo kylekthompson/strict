@@ -39,6 +39,25 @@ RSpec.describe Strict::Attribute do
       expect(attribute.coercer).to be_truthy
     end
 
+    it "uses the validator's coercer by default" do
+      coercer = ->(value) { value.to_s }
+      validator = Object.new
+      validator.define_singleton_method(:coercer) { coercer }
+
+      attribute = described_class.make(:attr_name, validator)
+
+      expect(attribute.coercer).to be(coercer)
+    end
+
+    it "allows the validator's coercer to be disabled" do
+      validator = Object.new
+      validator.define_singleton_method(:coercer) { ->(value) { value.to_s } }
+
+      attribute = described_class.make(:attr_name, validator, coerce: false)
+
+      expect(attribute.coercer).to be(false)
+    end
+
     it "accepts a value for 'default'" do
       attribute = described_class.make(:attr_name, default: 1)
 
