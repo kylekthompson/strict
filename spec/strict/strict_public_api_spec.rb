@@ -484,25 +484,50 @@ RSpec.describe Strict do
   end
 
   describe "configuration" do
-    it "supports nested thread-local overrides and restores them after errors" do
+    it "nests and restores overrides in the current execution context" do
       original_sample_rate = described_class.configuration.sample_rate
-      thread_sample_rate = Queue.new
 
-      expect do
-        described_class.with_overrides(sample_rate: 0) do
-          expect(described_class.configuration.sample_rate).to eq(0)
-          described_class.with_overrides(sample_rate: 0.5) do
-            expect(described_class.configuration.sample_rate).to eq(0.5)
-          end
-          expect(described_class.configuration.sample_rate).to eq(0)
-
-          Thread.new { thread_sample_rate << described_class.configuration.sample_rate }.join
-          raise "restore the override"
+      described_class.with_overrides(sample_rate: 0) do
+        expect(described_class.configuration.sample_rate).to eq(0)
+        described_class.with_overrides(sample_rate: 0.5) do
+          expect(described_class.configuration.sample_rate).to eq(0.5)
         end
-      end.to raise_error(RuntimeError, "restore the override")
+        expect(described_class.configuration.sample_rate).to eq(0)
+      end
 
-      expect(thread_sample_rate.pop).to eq(original_sample_rate)
       expect(described_class.configuration.sample_rate).to eq(original_sample_rate)
+    end
+
+    it "restores the previous override after an error" do
+      described_class.with_overrides(sample_rate: 0) do
+        expect do
+          described_class.with_overrides(sample_rate: 0.5) do
+            raise "restore the override"
+          end
+        end.to raise_error(RuntimeError, "restore the override")
+
+        expect(described_class.configuration.sample_rate).to eq(0)
+      end
+    end
+
+    it "does not inherit overrides in a new fiber" do
+      original_sample_rate = described_class.configuration.sample_rate
+
+      fiber_sample_rate = described_class.with_overrides(sample_rate: 0) do
+        Fiber.new { described_class.configuration.sample_rate }.resume
+      end
+
+      expect(fiber_sample_rate).to eq(original_sample_rate)
+    end
+
+    it "does not inherit overrides in a new thread" do
+      original_sample_rate = described_class.configuration.sample_rate
+
+      thread_sample_rate = described_class.with_overrides(sample_rate: 0) do
+        Thread.new { described_class.configuration.sample_rate }.value
+      end
+
+      expect(thread_sample_rate).to eq(original_sample_rate)
     end
 
     it "isolates overrides from application thread-local configuration" do
