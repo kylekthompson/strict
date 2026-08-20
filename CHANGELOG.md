@@ -7,6 +7,7 @@
 - Add inherited value and object attribute declarations and shared union attributes.
 - Add structured validation violations with paths, codes, rejected values, and validators for assignment, initialization, signed method calls, and returns, plus an optional detailed-validator protocol for custom nested failures.
 - Add opt-in RSpec matchers, verifying doubles, and nested matcher placeholders for Strict values and validations.
+- Add `implemented_by?` and `verify_implementation!` to check interface adapters without constructing an interface.
 
 ### Breaking changes
 
@@ -19,7 +20,7 @@
 - Compile signed-method invocation metadata once, reuse unchanged call arguments, and consolidate generated wrappers by owner.
 - Preserve validated explicit keywords when keyrest processing changes a signed call.
 - Forward validated interface calls directly to implementations and compile interface-conformance expectations once per interface definition.
-- Require interface implementations to cover every distinct exposed keyword parameter.
+- Check interface implementation signatures by substitutability: require every exposed keyword and reject only additional parameters that can constrain a valid interface call.
 - Reduce value and object hot-path allocations during initialization, `to_h`, equality, and hashing.
 - Share declaration invariants between attributes and parameters, with isolated backing storage for every distinct attribute name.
 - Keep Strict configuration overrides in isolated internal execution-context storage to avoid collisions with application keys.

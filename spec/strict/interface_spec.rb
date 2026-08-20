@@ -130,6 +130,17 @@ RSpec.describe Strict::Interface do
       expect(interface.no_params).to eq("4")
     end
 
+    it "uses the public implementation verification API" do
+      implementation = Class.new do
+        def call(one:, two:) = "#{one}#{two}"
+      end.new
+
+      allow(interface_class).to receive(:verify_implementation!).and_call_original
+
+      expect(interface_class.new(implementation).implementation).to be(implementation)
+      expect(interface_class).to have_received(:verify_implementation!).with(implementation)
+    end
+
     it "raises when missing a parameter" do
       expect do
         interface_class.new(
@@ -170,7 +181,7 @@ RSpec.describe Strict::Interface do
     end
     # rubocop:enable Naming/MethodParameterName
 
-    it "raises when given an extra parameter" do
+    it "raises when given an extra required keyword parameter" do
       expect do
         interface_class.new(
           Class.new do
@@ -178,6 +189,22 @@ RSpec.describe Strict::Interface do
           end.new
         )
       end.to raise_error(Strict::ImplementationDoesNotConformError)
+    end
+
+    it "accepts an extra optional keyword parameter" do
+      implementation = Class.new do
+        def call(one:, two:, three: nil) = "#{one}#{two}#{three}"
+      end.new
+
+      expect(interface_class.new(implementation).call(one: "1", two: "2")).to eq("12")
+    end
+
+    it "accepts an extra optional positional parameter" do
+      implementation = Class.new do
+        def call(prefix = nil, one:, two:) = "#{prefix}#{one}#{two}"
+      end.new
+
+      expect(interface_class.new(implementation).call(one: "1", two: "2")).to eq("12")
     end
 
     it "raises when given a non-keyword parameter" do
@@ -190,22 +217,12 @@ RSpec.describe Strict::Interface do
       end.to raise_error(Strict::ImplementationDoesNotConformError)
     end
 
-    it "raises when an explicit keyword parameter is optional" do
+    it "accepts an expected keyword that is optional" do
       implementation = Class.new do
-        def call(one:, two: nil); end
+        def call(one:, two: nil) = "#{one}#{two}"
       end.new
 
-      expect do
-        interface_class.new(implementation)
-      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
-        expect(error.invalid_method_definitions).to eq(
-          call: {
-            additional_parameters: [],
-            missing_parameters: [],
-            non_keyword_parameters: [:two]
-          }
-        )
-      }
+      expect(interface_class.new(implementation).call(one: "1", two: "2")).to eq("12")
     end
 
     it "raises when missing a method" do
@@ -290,7 +307,7 @@ RSpec.describe Strict::Interface do
       end.not_to raise_error
     end
 
-    it "raises when non-keyword args are partially splatted" do
+    it "raises when a required positional parameter precedes splatted positional arguments" do
       expect do
         interface_class.new(
           Class.new do
@@ -329,6 +346,40 @@ RSpec.describe Strict::Interface do
             non_keyword_parameters: []
           }
         )
+      }
+    end
+  end
+
+  describe ".implemented_by?" do
+    it "returns whether an adapter conforms" do
+      implementation = Class.new do
+        def call(one:, two: nil); end
+      end.new
+
+      expect(interface_class.implemented_by?(implementation)).to be(true)
+      expect(interface_class.implemented_by?(Object.new)).to be(false)
+    end
+  end
+
+  describe ".verify_implementation!" do
+    it "returns nil when the adapter conforms" do
+      implementation = Class.new do
+        def call(one:, two:); end
+      end.new
+
+      expect(interface_class.verify_implementation!(implementation)).to be_nil
+    end
+
+    it "raises with structured details when the adapter does not conform" do
+      implementation = Object.new
+
+      expect do
+        interface_class.verify_implementation!(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.interface).to be(interface_class)
+        expect(error.receiver).to be(implementation)
+        expect(error.missing_methods).to eq([:call])
+        expect(error.invalid_method_definitions).to be_empty
       }
     end
   end
@@ -381,5 +432,9 @@ RSpec.describe Strict::Interface do
     end.new
 
     expect(interface_class.new(implementation).call(if: "yes")).to eq("yes")
+  end
+
+  it "keeps internal conformance reflection private" do
+    expect(interface_class).not_to respond_to(:strict_interface_conformance)
   end
 end

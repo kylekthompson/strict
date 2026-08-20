@@ -32,7 +32,7 @@ module Strict
         end
 
         def stubs_for(strict_class, stubs)
-          return stubs unless strict_class.respond_to?(:strict_interface_conformance)
+          return stubs unless strict_class.respond_to?(:verify_implementation!)
 
           strict_class.strict_instance_methods.to_h { |name, _method| [name, nil] }.merge(stubs)
         end
@@ -121,7 +121,7 @@ module Strict
     ::RSpec::Matchers.define :conform_to do |interface|
       match do |implementation|
         @conformance_error = nil
-        interface.new(implementation)
+        interface.verify_implementation!(implementation)
         true
       rescue Strict::ImplementationDoesNotConformError => e
         @conformance_error = e

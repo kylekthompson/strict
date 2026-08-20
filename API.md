@@ -162,9 +162,11 @@ The following behavior is outside the compatibility boundary:
 
 ### Interfaces
 
-`Strict::Interface` adds `expose` and `.coercer`. `expose(name) { ... }` defines a validated, keyword-forwarding instance method.
+`Strict::Interface` adds `expose`, `.coercer`, `.implemented_by?`, and `.verify_implementation!`. `expose(name) { ... }` defines a validated, keyword-forwarding instance method.
 
-Constructing an interface requires an implementation. The implementation must respond publicly to every exposed method. Its explicit parameters must be the required keywords declared by the interface. A keyword-rest parameter satisfies keyword coverage. Additional ordinary implementation methods, blocks, and a positional-rest parameter do not affect conformance.
+Constructing an interface requires an implementation. The implementation must respond publicly to every exposed method and accept every keyword declared by that method. It can accept an interface keyword as a required or optional keyword, or through a keyword-rest parameter. Additional required positional or keyword parameters do not conform because they can reject a valid interface call. Additional optional positional or keyword parameters, positional-rest parameters, blocks, and ordinary implementation methods do not affect conformance.
+
+`Interface.implemented_by?(adapter)` returns `true` or `false` without constructing an interface. `Interface.verify_implementation!(adapter)` performs the same check, returns `nil` when the adapter conforms, and otherwise raises `Strict::ImplementationDoesNotConformError` with the structured details described below. Interface construction uses this same check.
 
 Interface instances expose their `implementation`. The class coercer:
 
@@ -193,7 +195,7 @@ Loading the adapter registers the `validate` and `conform_to` matchers and adds 
 fails. RSpec matcher objects and compatible instance doubles are accepted as test values. Exact failure-message wording
 and formatting are not fixed.
 
-`expect(implementation).to conform_to(interface)` checks the same public method and required-keyword conformance as
+`expect(implementation).to conform_to(interface)` uses `interface.verify_implementation!` to check the same conformance as
 constructing the interface. It does not invoke exposed methods. A failed expectation includes the conformance error's
 details, without a fixed wording or formatting contract.
 

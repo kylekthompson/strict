@@ -272,7 +272,15 @@ module Storages
   end
 end
 
-storage = Storage.new(Storages::Memory.new)
+adapter = Storages::Memory.new
+
+Storage.implemented_by?(adapter)
+# => true
+
+Storage.verify_implementation!(adapter)
+# => nil
+
+storage = Storage.new(adapter)
 # => #<Storage implementation=#<Storages::Memory>>
 
 storage.write(key: "some/path/to/file.rb", contents: "Hello")

@@ -94,6 +94,8 @@ module Strict
 
     def expose: (String | Symbol name) { () [self: _MethodDsl] -> untyped } -> void
     def coercer: () -> _Coercer[untyped, untyped]
+    def implemented_by?: (untyped adapter) -> bool
+    def verify_implementation!: (untyped adapter) -> nil
   end
 
   interface _UnionVariantClass

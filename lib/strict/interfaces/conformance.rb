@@ -66,26 +66,38 @@ module Strict
       def invalid_definition_for(expectation, implementation_parameters)
         matched_parameter_mask = 0
         has_keyword_splat = false
+        implementation_parameters.each do |kind, parameter_name|
+          case kind
+          when :keyrest
+            has_keyword_splat = true
+          when :keyreq, :key
+            parameter_index = expectation.parameter_names.index(parameter_name)
+            matched_parameter_mask |= 1 << parameter_index if parameter_index
+          end
+        end
+
         additional_parameters = nil
         non_keyword_parameters = nil
 
         implementation_parameters.each do |kind, parameter_name|
-          case kind
-          when :block, :rest
-            next
-          when :keyrest
-            has_keyword_splat = true
-            next
-          end
-
           parameter_index = expectation.parameter_names.index(parameter_name)
-          unless parameter_index
-            (additional_parameters ||= []) << parameter_name
-            next
-          end
+          case kind
+          when :keyreq
+            (additional_parameters ||= []) << parameter_name unless parameter_index
+          when :req
+            if parameter_index
+              matched_parameter_mask |= 1 << parameter_index
+              (non_keyword_parameters ||= []) << parameter_name
+            else
+              (additional_parameters ||= []) << parameter_name
+            end
+          when :opt
+            next unless parameter_index && !has_keyword_splat
+            next if matched_parameter_mask.anybits?(1 << parameter_index)
 
-          matched_parameter_mask |= 1 << parameter_index
-          (non_keyword_parameters ||= []) << parameter_name unless kind == :keyreq
+            matched_parameter_mask |= 1 << parameter_index
+            (non_keyword_parameters ||= []) << parameter_name
+          end
         end
 
         missing_parameters = missing_parameters_from(expectation, matched_parameter_mask) unless has_keyword_splat

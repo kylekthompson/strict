@@ -6,7 +6,7 @@ module Strict
       attr_reader :implementation
 
       def initialize(implementation)
-        self.class.strict_interface_conformance.verify!(implementation)
+        self.class.verify_implementation!(implementation)
 
         @implementation = implementation
       end
