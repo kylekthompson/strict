@@ -44,5 +44,7 @@ module Strict
         @strict_interface_conformance ||= Interfaces::Conformance.new(self)
       end
     end
+
+    private_constant :ClassMethods
   end
 end

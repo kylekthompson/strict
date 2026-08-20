@@ -3,14 +3,12 @@
 require "spec_helper"
 
 RSpec.describe Strict::Attributes::Class do
-  it "aligns the constant with the lookup method" do
-    configured_class = described_class
-    mod = Module.new do
-      const_set(configured_class::CONSTANT, "config value")
+  it "builds a coercer for the extended class" do
+    attributes_class = Class.new
+    attributes_class.extend(described_class)
+    coercer = attributes_class.coercer
 
-      extend configured_class
-    end
-
-    expect(mod.strict_attributes).to eq("config value")
+    expect(coercer).to be_a(Strict::Attributes::Coercer)
+    expect(coercer.attributes_class).to be(attributes_class)
   end
 end
