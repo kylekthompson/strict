@@ -69,7 +69,7 @@ Only one default option can be present on one declaration.
 - a class method name as a symbol;
 - `true`, which calls the class method `coerce_<attribute>`.
 
-The generated class `coercer` returns `nil` and non-hash-like values unchanged. For hash-like input, it recognizes declared symbol or string keys and initializes the class with those values.
+The generated class `coercer` returns `nil`, non-hash-like values, and instances of that exact class unchanged. A subclass instance is not an exact-class match: a parent class coercer treats it as hash-like input and creates a new parent instance from the parent's declared attributes. For other hash-like input, the coercer recognizes declared symbol or string keys and initializes the class with those values.
 
 ### Discriminated unions
 
