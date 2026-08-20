@@ -8,7 +8,7 @@ module Strict
     module_function
 
     def violations(validator, value)
-      return validator.__strict_violations__(value) if validator.respond_to?(:__strict_violations__)
+      return validator.violations(value) if DetailedValidator === validator
       return NONE if validator === value
 
       invalid(validator, value)

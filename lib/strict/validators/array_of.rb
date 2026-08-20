@@ -3,17 +3,15 @@
 module Strict
   module Validators
     class ArrayOf
+      include DetailedValidator
+
       attr_reader :element_validator
 
       def initialize(element_validator)
         @element_validator = element_validator
       end
 
-      def ===(value)
-        __strict_violations__(value).empty?
-      end
-
-      def __strict_violations__(value)
+      def violations(value)
         return Validation.invalid(self, value) unless Array === value
 
         violations = nil

@@ -3,6 +3,8 @@
 module Strict
   module Validators
     class HashOf
+      include DetailedValidator
+
       attr_reader :key_validator, :value_validator
 
       def initialize(key_validator, value_validator)
@@ -10,12 +12,8 @@ module Strict
         @value_validator = value_validator
       end
 
-      def ===(value)
-        __strict_violations__(value).empty?
-      end
-
       # rubocop:disable Metrics/MethodLength
-      def __strict_violations__(value)
+      def violations(value)
         return Validation.invalid(self, value) unless Hash === value
 
         violations = nil

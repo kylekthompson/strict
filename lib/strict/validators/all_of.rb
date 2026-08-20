@@ -3,17 +3,15 @@
 module Strict
   module Validators
     class AllOf
+      include DetailedValidator
+
       attr_reader :subvalidators
 
       def initialize(*subvalidators)
         @subvalidators = subvalidators
       end
 
-      def ===(value)
-        __strict_violations__(value).empty?
-      end
-
-      def __strict_violations__(value)
+      def violations(value)
         violations = nil
         subvalidators.each do |subvalidator|
           subvalidator_violations = Validation.violations(subvalidator, value)

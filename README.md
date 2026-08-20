@@ -181,7 +181,27 @@ end
 #    ]
 ```
 
-The codes are `:invalid`, `:missing`, and `:unexpected`. Custom validators only need to implement `===`; Strict reports a rejected value against that validator at the current path.
+The codes are `:invalid`, `:missing`, and `:unexpected`. Custom validators only need to implement `===`; Strict reports a rejected value against that validator at the current path. A custom validator can include `Strict::DetailedValidator` and implement `violations(value)` when it needs to report relative nested paths:
+
+```rb
+class Emails
+  include Strict::DetailedValidator
+
+  def violations(value)
+    unless Array === value
+      return [Strict::Violation.new(path: [], code: :invalid, value: value, validator: Array)]
+    end
+
+    value.each_with_index.filter_map do |email, index|
+      next if String === email
+
+      Strict::Violation.new(path: [index], code: :invalid, value: email, validator: String)
+    end
+  end
+end
+```
+
+The module provides `===` from `violations`, and Strict prefixes each relative path with its enclosing attribute, parameter, or collection path.
 
 ### `Strict::Method`
 

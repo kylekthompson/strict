@@ -137,4 +137,54 @@ RSpec.describe Strict::Violation do
     }
     expect(validated_values).to eq([:invalid])
   end
+
+  it "accepts static values as validators" do
+    value_class = Class.new do
+      include Strict::Value
+
+      attributes { state "ready" }
+    end
+
+    expect do
+      value_class.new(state: "pending")
+    end.to raise_error(Strict::InitializationError) { |error|
+      violation = error.violations.fetch(0)
+
+      expect(violation.path).to eq([:state])
+      expect(violation.value).to eq("pending")
+      expect(violation.validator).to eq("ready")
+    }
+  end
+
+  it "prefixes relative paths from an opt-in detailed validator" do
+    email_validator = Class.new do
+      include Strict::DetailedValidator
+
+      def violations(value)
+        value.each_with_index.filter_map do |email, index|
+          next if String === email
+
+          Strict::Violation.new(path: [index], code: :invalid, value: email, validator: String)
+        end
+      end
+    end.new
+    value_class = Class.new do
+      include Strict::Value
+
+      attributes { emails email_validator }
+    end
+
+    expect(email_validator === ["one@example.com"]).to be(true)
+    expect(value_class.new(emails: ["one@example.com"]).to_h).to eq(emails: ["one@example.com"])
+    expect do
+      value_class.new(emails: ["one@example.com", 2])
+    end.to raise_error(Strict::InitializationError) { |error|
+      violation = error.violations.fetch(0)
+
+      expect(violation.path).to eq([:emails, 1])
+      expect(violation.code).to eq(:invalid)
+      expect(violation.value).to eq(2)
+      expect(violation.validator).to equal(String)
+    }
+  end
 end

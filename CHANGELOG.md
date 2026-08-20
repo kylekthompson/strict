@@ -5,7 +5,7 @@
 - Define and characterize the supported next-major API in `API.md`, provide RBS signatures for that boundary, validate them in the default checks, and add repeatable timing and allocation benchmark tooling.
 - Add closed discriminated unions whose generated variants use `Strict::Value` for attributes and value behavior.
 - Add inherited value and object attribute declarations and shared union attributes.
-- Add structured validation violations with paths, codes, rejected values, and validators for assignment, initialization, signed method calls, and returns.
+- Add structured validation violations with paths, codes, rejected values, and validators for assignment, initialization, signed method calls, and returns, plus an optional detailed-validator protocol for custom nested failures.
 
 ### Breaking changes
 
