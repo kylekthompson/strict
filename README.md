@@ -358,8 +358,8 @@ Shipment.new(item: double("item"))
 # => Strict::InitializationError
 ```
 
-Matcher objects can also stand in for validated fields when constructing expected Strict values. RSpec recursively
-applies the nested matchers in argument expectations:
+Matcher objects can also stand in for validated fields or elements of built-in collection validators when constructing
+expected Strict values. RSpec recursively applies the nested matchers in argument expectations:
 
 ```rb
 expect(dispatcher).to have_received(:ship).with(

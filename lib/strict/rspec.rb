@@ -81,6 +81,14 @@ module Strict
       end
     end
 
+    module AcceptsNestedMatchersAndDoubles
+      def violations(validator, value)
+        return NO_VIOLATIONS if Strict::RSpec.test_value?(validator, value)
+
+        super
+      end
+    end
+
     module ComposableValue
       def ===(other)
         return false unless other.instance_of?(self.class)
@@ -103,6 +111,7 @@ end
 
 Strict::Declaration.prepend(Strict::RSpec::AcceptsMatchersAndDoubles)
 Strict::Return.prepend(Strict::RSpec::AcceptsMatchersAndDoubles)
+Strict::Validation.singleton_class.prepend(Strict::RSpec::AcceptsNestedMatchersAndDoubles)
 Strict::Value.prepend(Strict::RSpec::ComposableValue)
 
 RSpec.configure do |config|

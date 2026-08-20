@@ -13,19 +13,31 @@ RSpec.describe Strict::RSpec do
 
         attributes do
           other_value nested_validator
+          other_values ArrayOf(nested_validator)
         end
       end
       receiver_class = Class.new do
         def bar(value:); end
       end
       receiver = instance_spy(receiver_class)
-      receiver.bar(value: value_class.new(other_value: nested_value_class.new(1)))
+      receiver.bar(
+        value: value_class.new(
+          other_value: nested_value_class.new(1),
+          other_values: [nested_value_class.new(2)]
+        )
+      )
 
       expect(receiver).to have_received(:bar).with(
-        value: value_class.new(other_value: have_attributes(a: 1))
+        value: value_class.new(
+          other_value: have_attributes(a: 1),
+          other_values: [have_attributes(a: 2)]
+        )
       )
       expect(receiver).not_to have_received(:bar).with(
-        value: value_class.new(other_value: have_attributes(a: 2))
+        value: value_class.new(
+          other_value: have_attributes(a: 2),
+          other_values: [have_attributes(a: 3)]
+        )
       )
     end
   end
