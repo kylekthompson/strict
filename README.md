@@ -20,6 +20,8 @@ $ gem install strict
 
 ## Usage
 
+See [Supported API](API.md) for the next major release's compatibility boundary.
+
 ### `Strict::Value`
 
 ```rb
