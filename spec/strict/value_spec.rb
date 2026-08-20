@@ -188,6 +188,12 @@ RSpec.describe Strict::Value do
     end.to raise_error(Strict::InitializationError)
   end
 
+  it "returns an exact instance unchanged from its coercer" do
+    instance = build(:value)
+
+    expect(ValueClass.coercer.call(instance)).to be(instance)
+  end
+
   it "converts subclass instances into new instances of the coercer's exact class" do
     person_class = Class.new do
       include Strict::Value
