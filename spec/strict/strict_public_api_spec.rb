@@ -15,7 +15,7 @@ RSpec.describe Strict do
       expect(object_class).to respond_to(:attributes)
       expect(method_class).to respond_to(:sig)
       expect(interface_class).to respond_to(:expose)
-      expect(union_class).to respond_to(:discriminator, :variant, :coercer)
+      expect(union_class).to respond_to(:attributes, :discriminator, :variant, :coercer)
     end
   end
 

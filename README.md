@@ -53,6 +53,24 @@ Money.new(amount_in_cents: 100_00) == Money.new(amount_in_cents: 100_00)
 # => true
 ```
 
+Subclasses can add attributes while retaining their inherited attributes:
+
+```rb
+class Person
+  include Strict::Value
+
+  attributes do
+    name String
+  end
+end
+
+class Employee < Person
+  attributes do
+    employee_id String
+  end
+end
+```
+
 ### `Strict::Union`
 
 ```rb
@@ -60,6 +78,10 @@ class PaymentResult
   include Strict::Union
 
   discriminator :status
+
+  attributes do
+    request_id String
+  end
 
   variant :authorized, tag: "payment.authorized" do
     attributes do
@@ -80,20 +102,22 @@ class PaymentResult
 end
 
 authorized = PaymentResult::Authorized.new(
+  request_id: "request_123",
   authorization_id: "auth_123",
   amount_in_cents: 1_000
 )
 authorized.to_h
-# => { status: "payment.authorized", authorization_id: "auth_123", amount_in_cents: 1_000 }
+# => { status: "payment.authorized", request_id: "request_123", authorization_id: "auth_123", amount_in_cents: 1_000 }
 
 authorized.successful?
 # => true
 
 result = PaymentResult.coercer.call(
   "status" => "declined",
+  "request_id" => "request_456",
   "reason" => "insufficient_funds"
 )
-# => #<PaymentResult::Declined status=:declined reason="insufficient_funds">
+# => #<PaymentResult::Declined status=:declined request_id="request_456" reason="insufficient_funds">
 
 case result
 in PaymentResult::Authorized(authorization_id:)

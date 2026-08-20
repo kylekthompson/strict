@@ -11,15 +11,29 @@ module Strict
       union_class.extend(ClassMethods)
       union_class.include(Instance)
       union_class.instance_variable_set(:@strict_union_discriminator, nil)
+      union_class.instance_variable_set(:@strict_union_attributes, nil)
       union_class.instance_variable_set(:@strict_union_variant_names, {})
       union_class.instance_variable_set(:@strict_union_variants, {})
     end
 
-    module ClassMethods
+    module ClassMethods # rubocop:disable Metrics/ModuleLength
       def discriminator(name)
         raise ArgumentError, "discriminator already declared for #{self}" if @strict_union_discriminator
 
-        @strict_union_discriminator = name.to_sym
+        discriminator = name.to_sym
+        strict_union_validate_attributes!(@strict_union_attributes, discriminator)
+        @strict_union_discriminator = discriminator
+        nil
+      end
+
+      def attributes(&definition)
+        raise ArgumentError, "attributes already declared for #{self}" if @strict_union_attributes
+        raise ArgumentError, "attributes must be declared before variants for #{self}" if @strict_union_variants.any?
+
+        definition ||= -> {}
+        attributes = Attributes::Dsl.run(&definition)
+        strict_union_validate_attributes!(attributes, @strict_union_discriminator)
+        @strict_union_attributes = attributes
         nil
       end
 
@@ -92,16 +106,28 @@ module Strict
         attribute_definition
       end
 
+      # rubocop:disable Metrics/MethodLength
       def strict_union_define_variant_attributes(variant_class, discriminator, tag, attribute_definition)
         discriminator_coercer = strict_union_discriminator_coercer(discriminator, tag)
+        shared_attributes = @strict_union_attributes
         variant_class.attributes do
           strict_attribute discriminator, tag, default_value: tag, coerce: discriminator_coercer
           discriminator_attribute = __strict_dsl_internal_attributes.fetch(discriminator)
+          shared_attributes&.each do |attribute|
+            __strict_dsl_internal_attributes[attribute.name] = attribute
+          end
           instance_exec(&attribute_definition) if attribute_definition
           unless __strict_dsl_internal_attributes.fetch(discriminator).equal?(discriminator_attribute)
             ::Kernel.raise ::ArgumentError, "variants cannot redeclare discriminator #{discriminator.inspect}"
           end
         end
+      end
+      # rubocop:enable Metrics/MethodLength
+
+      def strict_union_validate_attributes!(attributes, discriminator)
+        return unless discriminator && attributes&.any? { |attribute| attribute.name.eql?(discriminator) }
+
+        raise ArgumentError, "union attributes cannot redeclare discriminator #{discriminator.inspect}"
       end
 
       def strict_union_discriminator_coercer(discriminator, tag)
@@ -131,7 +157,7 @@ module Strict
 
         name.split("_").map { |part| part.sub(/\A./, &:upcase) }.join
       end
-    end
+    end # rubocop:enable Metrics/ModuleLength
 
     module Instance
       def initialize(...)

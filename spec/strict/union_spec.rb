@@ -40,6 +40,32 @@ RSpec.describe Strict::Union do
     expect(union_class === declined).to be(true)
   end
 
+  it "shares union attributes across variants" do
+    result_class = Class.new do
+      include Strict::Union
+
+      discriminator :status
+
+      attributes do
+        request_id String
+      end
+
+      variant :authorized do
+        attributes do
+          authorization_id String
+        end
+      end
+
+      variant :declined
+    end
+
+    authorized = result_class::Authorized.new(request_id: "request_123", authorization_id: "auth_123")
+    declined = result_class.coercer.call(status: :declined, request_id: "request_456")
+
+    expect(authorized.to_h).to eq(status: :authorized, request_id: "request_123", authorization_id: "auth_123")
+    expect(declined.to_h).to eq(status: :declined, request_id: "request_456")
+  end
+
   it "defines behavior on generated variant classes" do
     behavior = Module.new do
       def successful? = true
@@ -207,6 +233,50 @@ RSpec.describe Strict::Union do
         end
       end
     end.to raise_error(ArgumentError, /attributes already declared for variant :invalid/)
+  end
+
+  it "requires one union attribute declaration before variants" do
+    result_class = Class.new do
+      include Strict::Union
+
+      discriminator :kind
+      attributes { request_id String }
+    end
+
+    expect do
+      result_class.attributes { account_id String }
+    end.to raise_error(ArgumentError, /attributes already declared/)
+
+    result_class_without_attributes = Class.new do
+      include Strict::Union
+
+      discriminator :kind
+      variant :complete
+    end
+
+    expect do
+      result_class_without_attributes.attributes { request_id String }
+    end.to raise_error(ArgumentError, /attributes must be declared before variants/)
+  end
+
+  it "rejects discriminator attributes in union declarations" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        attributes { kind Symbol }
+      end
+    end.to raise_error(ArgumentError, /cannot redeclare discriminator :kind/)
+
+    expect do
+      Class.new do
+        include Strict::Union
+
+        attributes { kind Symbol }
+        discriminator :kind
+      end
+    end.to raise_error(ArgumentError, /cannot redeclare discriminator :kind/)
   end
 
   it "rejects equivalent duplicate discriminator tags" do

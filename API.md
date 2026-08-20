@@ -40,7 +40,7 @@ Both capabilities provide:
 - `==` and `eql?`, based on exact class and attribute values;
 - `hash`, consistent with `eql?`.
 
-A subclass that does not declare attributes inherits its parent's supported attribute behavior. Attribute redeclaration, multiple `attributes` blocks, generated-method collisions, and subclass attribute replacement or merging are outside the compatibility boundary.
+A subclass inherits its parent's attributes. A subclass `attributes` block adds its declarations after the inherited declarations without changing the parent. Attribute redeclaration, multiple `attributes` blocks on the same class, and generated-method collisions are outside the compatibility boundary.
 
 #### Attribute introspection
 
@@ -81,6 +81,10 @@ class PaymentResult
 
   discriminator :status
 
+  attributes do
+    request_id String
+  end
+
   variant :authorized, tag: "payment.authorized" do
     attributes do
       authorization_id String
@@ -100,16 +104,19 @@ class PaymentResult
 end
 ```
 
-There is no default discriminator. A variant name must be a lower snake-case string or symbol, and Strict generates its PascalCase nested subclass. By default, the discriminator tag is the name's corresponding symbol. The optional `tag:` can assign a different string or symbol. For example, `variant :requires_action, tag: "action-required"` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `"action-required"`.
+There is no default discriminator. A union can declare zero or one `attributes` block before its variants. Strict shares these attributes across every variant. The declaration can appear before or after the discriminator, but it cannot redeclare the discriminator.
 
-The variant block configures the generated subclass. It can include modules, define methods, and contain zero or one `attributes` block. Strict combines that block with an implicit first attribute containing the discriminator's fixed default value:
+A variant name must be a lower snake-case string or symbol, and Strict generates its PascalCase nested subclass. By default, the discriminator tag is the name's corresponding symbol. The optional `tag:` can assign a different string or symbol. For example, `variant :requires_action, tag: "action-required"` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `"action-required"`.
+
+The variant block configures the generated subclass. It can include modules, define methods, and contain zero or one `attributes` block. Strict combines the discriminator, shared union attributes, and variant attributes in that order. The discriminator is an implicit first attribute with a fixed default value:
 
 ```ruby
 PaymentResult::Authorized.new(
+  request_id: "request_123",
   authorization_id: "auth_123",
   amount_in_cents: 1_000
 ).to_h
-# => { status: "payment.authorized", authorization_id: "auth_123", amount_in_cents: 1_000 }
+# => { status: "payment.authorized", request_id: "request_123", authorization_id: "auth_123", amount_in_cents: 1_000 }
 ```
 
 Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, and pattern matching. A variant declaration cannot redeclare the discriminator. The union base cannot be instantiated directly.
@@ -132,7 +139,7 @@ payment_result PaymentResult
 coerced_payment_result PaymentResult, coerce: PaymentResult.coercer
 ```
 
-Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid variant name or tag, replacing an existing generated constant, declaring multiple attribute blocks, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
+Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid variant name or tag, replacing an existing generated constant, declaring multiple union or variant attribute blocks, declaring union attributes after a variant, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
 
 ### Signed methods
 

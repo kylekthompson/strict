@@ -102,6 +102,7 @@ module Strict
   # Extend this type-only interface in application signatures for classes that
   # include Strict::Union.
   interface _UnionClass
+    def attributes: () { () [self: _AttributesDsl] -> untyped } -> void
     def discriminator: (String | Symbol name) -> void
     def variant: (String | Symbol name, ?tag: String | Symbol) -> void
                | (String | Symbol name, ?tag: String | Symbol) { () [self: _UnionVariantClass] -> untyped } -> void
