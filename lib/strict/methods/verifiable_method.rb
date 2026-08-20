@@ -13,6 +13,17 @@ module Strict
             instance: instance
           )
         end
+
+        def for_interface(owner:, name:, configuration:)
+          invocation_parameters = configuration.parameters.map { |parameter| [:keyreq, parameter.name] }
+          new(
+            owner: owner,
+            name: name,
+            invocation_parameters: invocation_parameters,
+            configuration: configuration,
+            instance: true
+          )
+        end
       end
 
       class UnknownParameterError < Error
