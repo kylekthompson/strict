@@ -8,12 +8,26 @@ require "rspec/support/fuzzy_matcher"
 
 module Strict
   module RSpec
+    NO_VIOLATIONS = [].freeze
     INSTANCE_VARIABLE_GET = ::Object.instance_method(:instance_variable_get)
+    private_constant :NO_VIOLATIONS
     private_constant :INSTANCE_VARIABLE_GET
 
     class << self
       def valid?(validator, value)
-        validator === value || matcher?(value) || instance_double_valid_for?(validator, value)
+        violations(validator, value).empty?
+      end
+
+      def violations(validator, value)
+        return NO_VIOLATIONS if test_value?(validator, value)
+        return validator.violations(value) if Strict::DetailedValidator === validator
+        return NO_VIOLATIONS if validator === value
+
+        [Strict::Violation.new(path: [], code: :invalid, value: value, validator: validator)]
+      end
+
+      def test_value?(validator, value)
+        matcher?(value) || instance_double_valid_for?(validator, value)
       end
 
       def matcher?(value)
@@ -33,11 +47,37 @@ module Strict
 
         strict_class.strict_instance_methods.to_h { |name, _method| [name, nil] }.merge(stubs)
       end
+
+      def violation_details(violations)
+        descriptions = violations.map { |violation| "  - #{violation_description(violation)}" }
+        "violations:\n#{descriptions.join("\n")}"
+      end
+
+      private
+
+      def violation_description(violation)
+        location = violation.path.empty? ? "root" : violation.path.inspect
+
+        case violation.code
+        when :invalid
+          "at #{location}: expected #{format(violation.validator)}, got #{format(violation.value)}"
+        when :missing
+          "at #{location}: expected #{format(violation.validator)}, but the value was missing"
+        when :unexpected
+          "at #{location}: got unexpected #{format(violation.value)}"
+        end
+      end
+
+      def format(value)
+        ::RSpec::Support::ObjectFormatter.format(value)
+      end
     end
 
     module AcceptsMatchersAndDoubles
-      def valid?(value, configuration = Strict.configuration)
-        super || Strict::RSpec.matcher?(value) || Strict::RSpec.instance_double_valid_for?(validator, value)
+      def violations(value, configuration = Strict.configuration)
+        return NO_VIOLATIONS if Strict::RSpec.test_value?(validator, value)
+
+        super
       end
     end
 
@@ -90,11 +130,13 @@ end
 
 RSpec::Matchers.define :validate do |value|
   match do |validator|
-    Strict::RSpec.valid?(validator, value)
+    @violations = Strict::RSpec.violations(validator, value)
+    @violations.empty?
   end
 
   failure_message do |validator|
-    "expected #{validator.inspect} to validate #{value.inspect}"
+    message = "expected #{validator.inspect} to validate #{value.inspect}"
+    "#{message}\n\n#{Strict::RSpec.violation_details(@violations)}"
   end
 
   failure_message_when_negated do |validator|

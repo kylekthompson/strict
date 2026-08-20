@@ -133,7 +133,11 @@ RSpec.describe Strict::RSpec do
 
       expect do
         container_class.new(value: value)
-      end.to raise_error(Strict::InitializationError)
+      end.to raise_error(Strict::InitializationError) { |error|
+        expect(error.violations).to eq(
+          [Strict::Violation.new(path: [:value], code: :invalid, value: value, validator: value_class)]
+        )
+      }
       expect(value_class).not_to validate(value)
     end
   end
@@ -181,8 +185,27 @@ RSpec.describe Strict::RSpec do
         expect(String).to validate(1)
       end.to raise_error(
         RSpec::Expectations::ExpectationNotMetError,
-        "expected String to validate 1"
+        "expected String to validate 1\n\nviolations:\n  - at root: expected String, got 1"
       )
+    end
+
+    it "describes detailed violation paths" do
+      validator = Class.new do
+        include Strict::DetailedValidator
+
+        def violations(value)
+          return [] if Integer === value.a
+
+          [Strict::Violation.new(path: [:a], code: :invalid, value: value.a, validator: Integer)]
+        end
+      end.new
+      value = Struct.new(:a).new("1")
+
+      expect do
+        expect(validator).to validate(value)
+      end.to raise_error(RSpec::Expectations::ExpectationNotMetError) { |error|
+        expect(error.message).to include('at [:a]: expected Integer, got "1"')
+      }
     end
 
     it "describes an unexpectedly accepted value" do
