@@ -73,6 +73,18 @@ RSpec.describe Strict::Interface do
     end
   end
 
+  let(:underscore_interface_class) do
+    Class.new do
+      include Strict::Interface
+
+      expose(:call) do
+        _a String
+        _b String
+        returns String
+      end
+    end
+  end
+
   describe ".new" do
     it "raises when given a bad implementation" do
       expect do
@@ -127,6 +139,36 @@ RSpec.describe Strict::Interface do
         )
       end.to raise_error(Strict::ImplementationDoesNotConformError)
     end
+
+    # rubocop:disable Naming/MethodParameterName
+    it "rejects duplicate keyword names that omit an expected parameter" do
+      implementation = Class.new do
+        def call(_a:, _a:); end
+      end.new
+
+      expect do
+        underscore_interface_class.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError)
+    end
+
+    it "reports the expected parameter omitted by duplicate keyword names" do
+      implementation = Class.new do
+        def call(_a:, _a:, extra:); end
+      end.new
+
+      expect do
+        underscore_interface_class.new(implementation)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.invalid_method_definitions).to eq(
+          call: {
+            additional_parameters: [:extra],
+            missing_parameters: Set[:_b],
+            non_keyword_parameters: []
+          }
+        )
+      }
+    end
+    # rubocop:enable Naming/MethodParameterName
 
     it "raises when given an extra parameter" do
       expect do
