@@ -4,7 +4,7 @@ require "spec_helper"
 
 module InterfaceTest
   class Interface
-    extend Strict::Interface
+    include Strict::Interface
 
     expose(:first_method) do
       foo Integer
@@ -63,7 +63,7 @@ end
 RSpec.describe Strict::Interface do
   let(:interface_class) do
     Class.new do
-      extend Strict::Interface
+      include Strict::Interface
 
       expose(:call) do
         one String
@@ -226,5 +226,21 @@ RSpec.describe Strict::Interface do
         interface.first_method(foo: "1", bar: "2")
       end.to raise_error(Strict::MethodCallError)
     end
+  end
+
+  it "supports reserved parameter names through strict_parameter" do
+    interface_class = Class.new do
+      include Strict::Interface
+
+      expose(:call) do
+        strict_parameter :if, String
+        returns String
+      end
+    end
+    implementation = Class.new do
+      class_eval("def call(if:); binding.local_variable_get(:if); end", __FILE__, __LINE__)
+    end.new
+
+    expect(interface_class.new(implementation).call(if: "yes")).to eq("yes")
   end
 end

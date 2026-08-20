@@ -130,4 +130,23 @@ RSpec.describe Strict::Object do
       ObjectClass.coercer.call({})
     end.to raise_error(Strict::InitializationError)
   end
+
+  it "supports predicate and bang attribute names" do
+    object_class = Class.new do
+      include Strict::Object
+
+      attributes do
+        active? Strict::Validators::Boolean.instance
+        dangerous! Strict::Validators::Boolean.instance
+      end
+    end
+    instance = object_class.new(active?: true, dangerous!: false)
+
+    instance.public_send(:"active?=", false)
+    instance.public_send(:"dangerous!=", true)
+
+    expect(instance.active?).to be(false)
+    expect(instance.dangerous!).to be(true)
+    expect(instance.to_h).to eq(active?: false, dangerous!: true)
+  end
 end

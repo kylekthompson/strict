@@ -27,3 +27,35 @@ jobs:
         bundler-cache: true
     - name: Run the default task
       run: bundle exec rake
+
+  benchmark:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    name: Benchmark
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.3"
+        bundler-cache: true
+    - name: Run benchmarks
+      run: FORMAT=markdown bundle exec rake benchmark | tee benchmark-results.md
+    - name: Publish benchmark summary
+      if: always()
+      run: |
+        if [[ -f benchmark-results.md ]]; then
+          cat benchmark-results.md >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "The benchmark did not produce results." >> "$GITHUB_STEP_SUMMARY"
+        fi
+    - name: Upload benchmark results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: benchmark-results
+        path: benchmark-results.md
+        if-no-files-found: warn
+        archive: false

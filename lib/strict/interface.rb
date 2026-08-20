@@ -2,33 +2,35 @@
 
 module Strict
   module Interface
-    def self.extended(mod)
-      mod.extend(Strict::Method)
+    def self.included(mod)
+      mod.include(Strict::Method)
       mod.include(Interfaces::Instance)
+      mod.extend(ClassMethods)
     end
 
-    def coercer
-      Interfaces::Coercer.new(self)
-    end
+    module ClassMethods
+      def coercer
+        Interfaces::Coercer.new(self)
+      end
 
-    # rubocop:disable Metrics/MethodLength
-    def expose(method_name, &)
-      sig = sig(&)
-      parameter_list = [
-        *sig.parameters.map { |parameter| "#{parameter.name}:" },
-        "&block"
-      ].join(", ")
-      argument_list = [
-        *sig.parameters.map { |parameter| "#{parameter.name}: #{parameter.name}" },
-        "&block"
-      ].join(", ")
+      # rubocop:disable Metrics/MethodLength
+      def expose(method_name, &)
+        sig = sig(&)
+        parameter_list = [
+          *sig.parameters.map { |parameter| "#{parameter.name}:" },
+          "&block"
+        ].join(", ")
+        argument_list = sig.parameters.map do |parameter|
+          "#{parameter.name.inspect} => binding.local_variable_get(#{parameter.name.inspect})"
+        end.join(", ")
 
-      module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
-        def #{method_name}(#{parameter_list})              # def method_name(one:, two:, three:, &block)
-          implementation.#{method_name}(#{argument_list})  #   implementation.method_name(one: one, two: two, three: three, &block)
-        end                                                # end
-      RUBY
+        module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+          def #{method_name}(#{parameter_list})                                            # def method_name(one:, two:, &block)
+            implementation.public_send(#{method_name.inspect}, **{#{argument_list}}, &block) #   implementation.public_send(:method_name, **arguments, &block)
+          end                                                                              # end
+        RUBY
+      end
+      # rubocop:enable Metrics/MethodLength
     end
-    # rubocop:enable Metrics/MethodLength
   end
 end

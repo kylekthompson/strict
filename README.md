@@ -20,6 +20,8 @@ $ gem install strict
 
 ## Usage
 
+See [Supported API](API.md) for the next major release's compatibility boundary.
+
 ### `Strict::Value`
 
 ```rb
@@ -84,7 +86,7 @@ Stateful.new(some_state: "123") == Stateful.new(some_state: "123")
 
 ```rb
 class UpdateEmail
-  extend Strict::Method
+  include Strict::Method
 
   sig do
     user_id String, coerce: ->(value) { value.to_s }
@@ -114,7 +116,7 @@ UpdateEmail.new.call(user_id: "123", email: "456")
 
 ```rb
 class Storage
-  extend Strict::Interface
+  include Strict::Interface
 
   expose(:write) do
     key String
@@ -226,6 +228,8 @@ run validations. The `sample_rate` is used in tandem with `random` to determine 
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the specs. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+
+Run `bundle exec rake benchmark` to measure baseline timing and allocations for value initialization, verified method calls, interface calls, `to_h`, equality, and hashing. Set `ITERATIONS`, `WARMUP_ITERATIONS`, or `SAMPLES` to change the workload, and set `FORMAT=markdown` to produce a Markdown table. Pull requests publish this table in a non-blocking job summary and upload it as an artifact. These benchmarks report measurements only and do not enforce thresholds.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
