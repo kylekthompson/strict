@@ -75,6 +75,27 @@ RSpec.describe Strict::Union do
     expect(string_input).to eq(union_class::Declined.new(reason: "insufficient_funds"))
   end
 
+  it "separates variant names from discriminator tags" do
+    result_class = Class.new do
+      include Strict::Union
+
+      discriminator :status
+      variant :authorized, tag: "some-string" do
+        attributes do
+          authorization_id String
+        end
+      end
+    end
+
+    authorized = result_class::Authorized.new(status: :"some-string", authorization_id: "auth_123")
+    string_input = result_class.coercer.call(status: "some-string", authorization_id: "auth_123")
+    symbol_input = result_class.coercer.call(status: :"some-string", authorization_id: "auth_123")
+
+    expect(authorized.to_h).to eq(status: "some-string", authorization_id: "auth_123")
+    expect(string_input).to eq(authorized)
+    expect(symbol_input).to eq(authorized)
+  end
+
   it "works as an attribute validator with optional coercion" do
     result_class = union_class
     container_class = Class.new do
@@ -163,7 +184,7 @@ RSpec.describe Strict::Union do
     expect(result).to eq(["auth_123", 1_000])
   end
 
-  it "generates PascalCase constants from lower snake_case tags and permits empty variants" do
+  it "generates PascalCase constants from lower snake_case names and permits empty variants" do
     generated_union = Class.new do
       include Strict::Union
 
@@ -186,6 +207,31 @@ RSpec.describe Strict::Union do
         end
       end
     end.to raise_error(ArgumentError, /attributes already declared for variant :invalid/)
+  end
+
+  it "rejects equivalent duplicate discriminator tags" do
+    duplicate_tag = Class.new do
+      include Strict::Union
+
+      discriminator :kind
+      variant :first, tag: "same"
+    end
+
+    expect do
+      duplicate_tag.variant(:second, tag: :same)
+    end.to raise_error(ArgumentError, /tag :same already declared/)
+  end
+
+  it "requires discriminator tags to be strings or symbols" do
+    invalid_tag = Class.new do
+      include Strict::Union
+
+      discriminator :kind
+    end
+
+    expect do
+      invalid_tag.variant(:invalid, tag: 1)
+    end.to raise_error(ArgumentError, /tag must be a String or Symbol/)
   end
 
   it "rejects duplicate declarations and generated constant collisions" do

@@ -25,8 +25,8 @@ module Strict
 
       def coerce(hash)
         tag = tag_from(hash)
-        canonical_tag = tag.is_a?(String) ? tag.to_sym : tag
-        variant_for(canonical_tag, original_tag: tag).coercer.call(hash.merge(discriminator => canonical_tag))
+        variant = variant_for(normalized_tag(tag), original_tag: tag)
+        variant.variant_class.coercer.call(hash.merge(discriminator => variant.tag))
       end
 
       def tag_from(hash)
@@ -41,10 +41,14 @@ module Strict
       def variant_for(tag, original_tag:)
         variants.fetch(tag)
       rescue KeyError
-        expected = variants.keys.map(&:inspect).join(", ")
+        expected = variants.values.map { |variant| variant.tag.inspect }.join(", ")
         raise ArgumentError,
               "unknown discriminator #{discriminator.inspect} for #{union_class}: #{original_tag.inspect}; " \
               "expected one of #{expected}"
+      end
+
+      def normalized_tag(tag)
+        tag.is_a?(String) ? tag.to_sym : tag
       end
     end
   end

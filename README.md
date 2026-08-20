@@ -61,7 +61,7 @@ class PaymentResult
 
   discriminator :status
 
-  variant :authorized do
+  variant :authorized, tag: "payment.authorized" do
     attributes do
       authorization_id String
       amount_in_cents Integer
@@ -84,7 +84,7 @@ authorized = PaymentResult::Authorized.new(
   amount_in_cents: 1_000
 )
 authorized.to_h
-# => { status: :authorized, authorization_id: "auth_123", amount_in_cents: 1_000 }
+# => { status: "payment.authorized", authorization_id: "auth_123", amount_in_cents: 1_000 }
 
 authorized.successful?
 # => true

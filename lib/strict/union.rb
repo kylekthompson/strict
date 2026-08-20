@@ -4,11 +4,14 @@ module Strict
   module Union
     VARIANT_NAME = /\A[a-z][a-z0-9]*(?:_[a-z0-9]+)*\z/
     private_constant :VARIANT_NAME
+    Variant = Data.define(:tag, :variant_class)
+    private_constant :Variant
 
     def self.included(union_class)
       union_class.extend(ClassMethods)
       union_class.include(Instance)
       union_class.instance_variable_set(:@strict_union_discriminator, nil)
+      union_class.instance_variable_set(:@strict_union_variant_names, {})
       union_class.instance_variable_set(:@strict_union_variants, {})
     end
 
@@ -20,18 +23,13 @@ module Strict
         nil
       end
 
-      def variant(name, &definition)
+      def variant(name, tag: name.to_sym, &definition)
         discriminator = strict_union_discriminator!
-        tag = name.to_sym
-        constant_name = strict_union_constant_name(tag)
-        raise ArgumentError, "variant #{tag.inspect} already declared for #{self}" if @strict_union_variants.key?(tag)
-        raise ArgumentError, "constant #{constant_name} is already defined for #{self}" if
-          const_defined?(constant_name, false)
-
-        variant_class = strict_union_build_variant(discriminator, tag, definition || -> {})
-        const_set(constant_name, variant_class)
-        @strict_union_variants[tag] = variant_class
-        variant_class
+        name = name.to_sym
+        tag_key = strict_union_tag_key(tag)
+        constant_name = strict_union_validate_variant!(name, tag, tag_key)
+        variant_class = strict_union_build_variant(discriminator, name, tag, definition)
+        strict_union_register_variant(name, tag, tag_key, constant_name, variant_class)
       end
 
       def coercer
@@ -42,19 +40,37 @@ module Strict
       end
 
       def ===(value)
-        @strict_union_variants&.value?(value.class) || false
+        @strict_union_variant_names&.value?(value.class) || false
       end
 
       private
+
+      def strict_union_validate_variant!(name, tag, tag_key)
+        constant_name = strict_union_constant_name(name)
+        raise ArgumentError, "variant #{name.inspect} already declared for #{self}" if
+          @strict_union_variant_names.key?(name)
+        raise ArgumentError, "tag #{tag.inspect} already declared for #{self}" if @strict_union_variants.key?(tag_key)
+        raise ArgumentError, "constant #{constant_name} is already defined for #{self}" if
+          const_defined?(constant_name, false)
+
+        constant_name
+      end
+
+      def strict_union_register_variant(name, tag, tag_key, constant_name, variant_class)
+        const_set(constant_name, variant_class)
+        @strict_union_variant_names[name] = variant_class
+        @strict_union_variants[tag_key] = Variant.new(tag:, variant_class:)
+        variant_class
+      end
 
       def strict_union_discriminator!
         @strict_union_discriminator ||
           raise(ArgumentError, "declare a discriminator before variants for #{self}")
       end
 
-      def strict_union_build_variant(discriminator, tag, definition)
+      def strict_union_build_variant(discriminator, name, tag, definition)
         variant_class = Class.new(self)
-        attribute_definition = strict_union_evaluate_variant(variant_class, tag, definition)
+        attribute_definition = strict_union_evaluate_variant(variant_class, name, definition)
         variant_class.include(Strict::Value)
         strict_union_define_variant_attributes(variant_class, discriminator, tag, attribute_definition)
         variant_class.define_singleton_method(:===, ::Module.instance_method(:===))
@@ -89,14 +105,22 @@ module Strict
       end
 
       def strict_union_discriminator_coercer(discriminator, tag)
+        tag_key = strict_union_tag_key(tag)
         lambda do |value|
-          canonical_value = value.is_a?(::String) ? value.to_sym : value
-          unless canonical_value.eql?(tag)
+          unless strict_union_tag_key(value).eql?(tag_key)
             raise ArgumentError, "discriminator #{discriminator.inspect} must equal #{tag.inspect}"
           end
 
           tag
         end
+      end
+
+      def strict_union_tag_key(tag)
+        unless tag.is_a?(::String) || tag.is_a?(::Symbol)
+          raise ArgumentError, "variant tag must be a String or Symbol, got #{tag.inspect}"
+        end
+
+        tag.is_a?(::String) ? tag.to_sym : tag
       end
 
       def strict_union_constant_name(tag)

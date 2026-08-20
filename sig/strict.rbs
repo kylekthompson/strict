@@ -103,8 +103,8 @@ module Strict
   # include Strict::Union.
   interface _UnionClass
     def discriminator: (String | Symbol name) -> void
-    def variant: (String | Symbol name) -> void
-               | (String | Symbol name) { () [self: _UnionVariantClass] -> untyped } -> void
+    def variant: (String | Symbol name, ?tag: String | Symbol) -> void
+               | (String | Symbol name, ?tag: String | Symbol) { () [self: _UnionVariantClass] -> untyped } -> void
     def coercer: () -> _Coercer[untyped, untyped]
     def ===: (untyped value) -> bool
   end

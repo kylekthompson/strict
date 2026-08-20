@@ -81,7 +81,7 @@ class PaymentResult
 
   discriminator :status
 
-  variant :authorized do
+  variant :authorized, tag: "payment.authorized" do
     attributes do
       authorization_id String
       amount_in_cents Integer
@@ -100,7 +100,7 @@ class PaymentResult
 end
 ```
 
-There is no default discriminator. A variant name must be a lower snake-case string or symbol. Its canonical tag is the corresponding symbol, and Strict generates a PascalCase nested subclass. For example, `variant :requires_action` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `:requires_action`.
+There is no default discriminator. A variant name must be a lower snake-case string or symbol, and Strict generates its PascalCase nested subclass. By default, the discriminator tag is the name's corresponding symbol. The optional `tag:` can assign a different string or symbol. For example, `variant :requires_action, tag: "action-required"` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `"action-required"`.
 
 The variant block configures the generated subclass. It can include modules, define methods, and contain zero or one `attributes` block. Strict combines that block with an implicit first attribute containing the discriminator's fixed default value:
 
@@ -109,7 +109,7 @@ PaymentResult::Authorized.new(
   authorization_id: "auth_123",
   amount_in_cents: 1_000
 ).to_h
-# => { status: :authorized, authorization_id: "auth_123", amount_in_cents: 1_000 }
+# => { status: "payment.authorized", authorization_id: "auth_123", amount_in_cents: 1_000 }
 ```
 
 Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, and pattern matching. A variant declaration cannot redeclare the discriminator. The union base cannot be instantiated directly.
@@ -121,7 +121,7 @@ The union class `coercer`:
 - returns `nil` and non-hash-like values unchanged;
 - returns an existing exact union member unchanged;
 - accepts the discriminator as a symbol or string key;
-- accepts a registered tag as its symbol or string value;
+- accepts a registered tag as its equivalent symbol or string value and stores its configured form;
 - dispatches hash-like input through the selected variant's value coercer;
 - raises `ArgumentError` when the discriminator is missing or unknown.
 
@@ -132,7 +132,7 @@ payment_result PaymentResult
 coerced_payment_result PaymentResult, coerce: PaymentResult.coercer
 ```
 
-Declaring a discriminator more than once, declaring a duplicate tag, using an invalid variant name, replacing an existing generated constant, declaring multiple attribute blocks, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
+Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid variant name or tag, replacing an existing generated constant, declaring multiple attribute blocks, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
 
 ### Signed methods
 
