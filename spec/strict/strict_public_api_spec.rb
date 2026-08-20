@@ -321,6 +321,40 @@ RSpec.describe Strict do
         expect(error.invalid_method_definitions).to be_empty
       }
     end
+
+    it "forwards coerced and defaulted keywords and blocks through punctuation method names" do
+      interface_class = Class.new do
+        include Strict::Interface
+
+        expose(:transform!) do
+          value Integer, coerce: ->(value) { value.to_i }
+          suffix String, default: "!"
+          returns String
+        end
+      end
+      implementation = Class.new do
+        define_method(:transform!) do |value:, suffix:, &block|
+          "#{block.call(value)}#{suffix}"
+        end
+      end.new
+
+      result = interface_class.new(implementation).transform!(value: "2") { |value| value * 3 }
+
+      expect(result).to eq("6!")
+    end
+
+    it "validates exposed method return values" do
+      interface_class = Class.new do
+        include Strict::Interface
+
+        expose(:call) { returns String }
+      end
+      implementation = Class.new { def call = 1 }.new
+
+      expect do
+        interface_class.new(implementation).call
+      end.to raise_error(Strict::MethodReturnError) { |error| expect(error.value).to eq(1) }
+    end
   end
 
   describe "configuration" do
