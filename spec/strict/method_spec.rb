@@ -344,6 +344,21 @@ RSpec.describe Strict::Method do
     end
   end
 
+  it "reuses one wrapper module for each method owner" do
+    klass = Class.new { include Strict::Method }
+
+    3.times do |index|
+      klass.sig { value Integer }
+      klass.define_method(:"instance_#{index}") { |value| value }
+
+      klass.sig { value Integer }
+      klass.define_singleton_method(:"singleton_#{index}") { |value| value }
+    end
+
+    expect(klass.ancestors.count { |ancestor| ancestor.is_a?(Strict::Methods::Module) }).to eq(1)
+    expect(klass.singleton_class.ancestors.count { |ancestor| ancestor.is_a?(Strict::Methods::Module) }).to eq(1)
+  end
+
   it "supports reserved parameter names through strict_parameter" do
     instance = Class.new do
       include Strict::Method
