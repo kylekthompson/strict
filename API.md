@@ -269,7 +269,7 @@ Strict provides:
 
 The supported configuration options are `random` and `sample_rate`, with readers and writers. `random` must implement `Random::Formatter`. `sample_rate` must be in the inclusive range from `0` through `1`.
 
-Overrides are local to the current thread, can be nested, and are restored when a block returns or raises. An active override cannot be changed with `Strict.configure`.
+Overrides are local to the current execution context (fiber), can be nested, and are restored when a block returns or raises. Neither a newly created fiber nor a new thread inherits an active override. An active override cannot be changed with `Strict.configure`.
 
 Sampling controls validator calls. Coercion, signature-definition checks, and interface conformance checks still run when validation is sampled out.
 

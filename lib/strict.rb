@@ -10,7 +10,7 @@ module Strict
 
   class << self
     def configuration
-      thread_configuration || global_configuration
+      execution_context_override || global_configuration
     end
 
     def configure
@@ -20,27 +20,27 @@ module Strict
     end
 
     def with_overrides(**overrides)
-      original_thread_configuration = thread_configuration
+      original_override = execution_context_override
 
       begin
-        self.thread_configuration = Strict::Configuration.new(**configuration.to_h, **overrides)
+        self.execution_context_override = Strict::Configuration.new(**configuration.to_h, **overrides)
         yield
       ensure
-        self.thread_configuration = original_thread_configuration
+        self.execution_context_override = original_override
       end
     end
 
     private
 
     def overridden?
-      !!thread_configuration
+      !!execution_context_override
     end
 
-    def thread_configuration
+    def execution_context_override
       Thread.current[:__strict_configuration_override]
     end
 
-    def thread_configuration=(configuration)
+    def execution_context_override=(configuration)
       Thread.current[:__strict_configuration_override] = configuration
     end
 
