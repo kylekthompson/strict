@@ -199,6 +199,56 @@ RSpec.describe Strict do
       expect(method_class.reserved(if: "yes")).to eq("yes")
     end
 
+    it "samples each parameter and the return value independently" do
+      validations = []
+      validator = lambda do |name|
+        Object.new.tap do |value|
+          value.define_singleton_method(:===) do |_argument|
+            validations << name
+            true
+          end
+        end
+      end
+      random_values = [0.25, 0.75, 0.25]
+      random = Object.new.extend(Random::Formatter)
+      random.define_singleton_method(:rand) { random_values.shift }
+      method_class = Class.new do
+        include Strict::Method
+
+        sig do
+          first validator.call(:first)
+          second validator.call(:second)
+          returns validator.call(:return)
+        end
+        def call(first, second) = first + second
+      end
+
+      result = described_class.with_overrides(random: random, sample_rate: 0.5) { method_class.new.call(1, 2) }
+
+      expect(result).to eq(3)
+      expect(validations).to eq(%i[first return])
+      expect(random_values).to be_empty
+    end
+
+    it "supports an optional positional parameter before a required positional parameter" do
+      method_class = Class.new do
+        include Strict::Method
+
+        sig do
+          prefix String, default: "default"
+          value Integer
+          returns Array
+        end
+        # rubocop:disable Style/OptionalArguments
+        def call(prefix = nil, value) = [prefix, value]
+        # rubocop:enable Style/OptionalArguments
+      end
+      method = method_class.new
+
+      expect(method.call(1)).to eq(["default", 1])
+      expect(method.call("given", 1)).to eq(["given", 1])
+    end
+
     it "keeps inherited signed methods validated and treats unsigned overrides normally" do
       parent_class = Class.new do
         include Strict::Method

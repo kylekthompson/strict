@@ -36,6 +36,56 @@ RSpec.describe Strict::Method do
     expect(instance.call(1, 2, 3, two: 2.2, other: 1)).to eq([1, [2, 3], 2.2, { other: 1 }])
   end
 
+  it "forwards cardinality changes from an in-place rest coercion" do
+    replacements = [[9], [9, 10, 11]]
+    coercer = ->(values) { values.replace(replacements.shift) }
+    instance = Class.new do
+      include Strict::Method
+
+      sig do
+        values Array, coerce: coercer
+        returns Array
+      end
+      def call(*values) = values
+    end.new
+
+    expect(instance.call(1, 2)).to eq([9])
+    expect(instance.call(1, 2)).to eq([9, 10, 11])
+  end
+
+  it "does not report values added by rest coercion as remaining arguments" do
+    coercer = ->(values) { values.replace([9, 10, 11]) }
+    instance = Class.new do
+      include Strict::Method
+
+      sig { values String, coerce: coercer }
+      def call(*values) = values
+    end.new
+
+    expect do
+      instance.call(1, 2)
+    end.to raise_error(Strict::MethodCallError) { |error| expect(error.remaining_args).to be_empty }
+  end
+
+  it "forwards cardinality changes made by a rest validator" do
+    validator = Object.new
+    validator.define_singleton_method(:===) do |values|
+      values.replace([9])
+      true
+    end
+    instance = Class.new do
+      include Strict::Method
+
+      sig do
+        values validator
+        returns Array
+      end
+      def call(*values) = values
+    end.new
+
+    expect(instance.call(1, 2)).to eq([9])
+  end
+
   it "does not validate blocks, but passes them through" do
     instance = Class.new do
       include Strict::Method
