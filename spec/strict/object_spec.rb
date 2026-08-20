@@ -8,6 +8,28 @@ RSpec.describe Strict::Object do
     expect(ObjectClass.strict_attributes.map(&:name)).to eq(%i[foo bar baz])
   end
 
+  it "combines inherited and subclass attributes with writers" do
+    parent_class = Class.new do
+      include Strict::Object
+
+      attributes do
+        name String
+      end
+    end
+    child_class = Class.new(parent_class) do
+      attributes do
+        employee_id String
+      end
+    end
+    employee = child_class.new(name: "Ada", employee_id: "employee_123")
+
+    employee.name = "Grace"
+    employee.employee_id = "employee_456"
+
+    expect(employee.to_h).to eq(name: "Grace", employee_id: "employee_456")
+    expect(parent_class.strict_attributes.map(&:name)).to eq([:name])
+  end
+
   it "exposes writer methods" do
     instance = build(:strict_object)
     instance.foo = 2
