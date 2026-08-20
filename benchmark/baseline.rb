@@ -8,6 +8,8 @@ module StrictBenchmark
   ITERATIONS = Integer(ENV.fetch("ITERATIONS", "100000"), 10)
   WARMUP_ITERATIONS = Integer(ENV.fetch("WARMUP_ITERATIONS", "20000"), 10)
   SAMPLES = Integer(ENV.fetch("SAMPLES", "5"), 10)
+  FORMAT = ENV.fetch("FORMAT", "text")
+  FORMATS = %w[markdown text].freeze
 
   class Value
     include Strict::Value
@@ -42,46 +44,90 @@ module StrictBenchmark
     def call(value:) = value
   end
 
+  class Formatter
+    def initialize(output_format)
+      @output_format = output_format
+    end
+
+    def print_header
+      puts markdown? ? markdown_header : text_header
+    end
+
+    def print_result(name:, nanoseconds:, allocations:)
+      result = if markdown?
+                 markdown_result(name:, nanoseconds:, allocations:)
+               else
+                 text_result(name:, nanoseconds:, allocations:)
+               end
+      puts result
+    end
+
+    private
+
+    attr_reader :output_format
+
+    def markdown? = output_format == "markdown"
+
+    def markdown_header
+      <<~MARKDOWN.chomp
+        ### Strict benchmark
+
+        `Ruby #{RUBY_VERSION} (#{RUBY_ENGINE})`
+
+        Iterations: #{ITERATIONS}; warmup: #{WARMUP_ITERATIONS}; samples: #{SAMPLES}
+
+        | Operation | Median ns/op | Allocations/op |
+        | --- | ---: | ---: |
+      MARKDOWN
+    end
+
+    def text_header
+      <<~TEXT.chomp
+        Ruby #{RUBY_VERSION} (#{RUBY_ENGINE})
+        Iterations: #{ITERATIONS}; warmup: #{WARMUP_ITERATIONS}; samples: #{SAMPLES}
+        Operation                      median ns/op     allocations/op
+      TEXT
+    end
+
+    def markdown_result(name:, nanoseconds:, allocations:)
+      format("| %<name>s | %<nanoseconds>.1f | %<allocations>.3f |", name:, nanoseconds:, allocations:)
+    end
+
+    def text_result(name:, nanoseconds:, allocations:)
+      format("%<name>-24s %<nanoseconds>18.1f %<allocations>18.3f", name:, nanoseconds:, allocations:)
+    end
+  end
+
   class << self
     def run
       validate_settings!
       benchmark_cases = build_cases
       warm_up(benchmark_cases)
+      formatter = Formatter.new(FORMAT)
 
-      print_header
-      benchmark_cases.each { |benchmark_case| print_result(benchmark_case) }
+      formatter.print_header
+      benchmark_cases.each { |benchmark_case| print_result(formatter, benchmark_case) }
     end
 
     private
 
-    def print_header
-      puts "Ruby #{RUBY_VERSION} (#{RUBY_ENGINE})"
-      puts "Iterations: #{ITERATIONS}; warmup: #{WARMUP_ITERATIONS}; samples: #{SAMPLES}"
-      puts "Operation                      median ns/op     allocations/op"
-    end
-
-    def print_result(benchmark_case)
+    def print_result(formatter, benchmark_case)
       nanoseconds = median(measure_times(benchmark_case.operation)) * 1_000_000_000 / ITERATIONS
       allocations = measure_allocations(benchmark_case.operation).fdiv(ITERATIONS)
-      puts format(
-        "%<name>-24s %<nanoseconds>18.1f %<allocations>18.3f",
-        name: benchmark_case.name,
-        nanoseconds: nanoseconds,
-        allocations: allocations
-      )
+      formatter.print_result(name: benchmark_case.name, nanoseconds:, allocations:)
     end
 
     def validate_settings!
-      settings = {
+      {
         "ITERATIONS" => ITERATIONS,
         "WARMUP_ITERATIONS" => WARMUP_ITERATIONS,
         "SAMPLES" => SAMPLES
-      }
-      invalid_setting = settings.find { |_name, value| value <= 0 }
-      return unless invalid_setting
+      }.each do |name, value|
+        raise ArgumentError, "#{name} must be greater than zero, got #{value}" unless value.positive?
+      end
+      return if FORMATS.include?(FORMAT)
 
-      name, value = invalid_setting
-      raise ArgumentError, "#{name} must be greater than zero, got #{value}"
+      raise ArgumentError, "FORMAT must be one of #{FORMATS.join(', ')}, got #{FORMAT.inspect}"
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
