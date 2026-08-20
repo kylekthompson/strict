@@ -56,9 +56,13 @@ module Strict
     end
 
     def valid?(value, configuration = Strict.configuration)
-      return true unless configuration.validate?
+      violations(value, configuration).empty?
+    end
 
-      validator === value
+    def violations(value, configuration = Strict.configuration, path: Validation::ROOT_PATH)
+      return Validation::NONE unless configuration.validate?
+
+      Validation.violations(validator, value, path: path)
     end
   end
 end

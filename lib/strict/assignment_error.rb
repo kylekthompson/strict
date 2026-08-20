@@ -4,8 +4,11 @@ module Strict
   class AssignmentError < Error
     attr_reader :invalid_attribute, :value
 
-    def initialize(assignable_class:, invalid_attribute:, value:)
-      super(message_from(assignable_class: assignable_class, invalid_attribute: invalid_attribute, value: value))
+    def initialize(assignable_class:, invalid_attribute:, value:, violations: Validation::NONE)
+      super(
+        message_from(assignable_class: assignable_class, invalid_attribute: invalid_attribute, value: value),
+        violations: violations
+      )
 
       @invalid_attribute = invalid_attribute
       @value = value
