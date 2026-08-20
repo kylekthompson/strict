@@ -20,7 +20,7 @@ The former `extend Strict::Method` and `extend Strict::Interface` forms are not 
 
 `Strict::Value` and `Strict::Object` add an `attributes` declaration block. Each declaration accepts an attribute name, an optional validator, `coerce:`, and one of `default:`, `default_value:`, or `default_generator:`.
 
-Attribute names must be strings or symbols in the supported identifier shape: a lowercase ASCII letter or underscore, followed by ASCII letters, digits, or underscores, with one optional trailing `?` or `!`. Ruby reserved words use `strict_attribute`, for example `strict_attribute :if`. Empty names, operators, setters, and other method-name forms are rejected. Each distinct supported name has independent backing storage, including names that differ only by a trailing `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
+Attribute names must be strings or symbols in the supported identifier shape: a lowercase ASCII letter or underscore, followed by ASCII letters, digits, or underscores, with one optional trailing `?` or `!`. Use `strict_attribute` when a name is a Ruby reserved word or already resolves to a method inside the declaration block, for example `strict_attribute :if` or `strict_attribute :format`. Empty names, operators, setters, and other method-name forms are rejected. Each distinct supported name has independent backing storage, including names that differ only by a trailing `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
 
 Both capabilities provide:
 
@@ -42,7 +42,9 @@ Both capabilities provide:
 
 A class can execute at most one `attributes` block, and an empty block counts as that one block. A subclass inherits its parent's attributes and can execute one additive `attributes` block without changing the parent. An attribute cannot duplicate another attribute in the same block or an inherited attribute.
 
-Before it installs generated methods, Strict rejects an attribute whose reader would collide with any existing public, protected, or private instance method. This includes methods supplied by Ruby and Strict, such as `class`, `to_h`, `inspect`, `hash`, `eql?`, `initialize`, `pretty_print`, and `public_send`. `Strict::Object` applies the same check to its generated writer. Strict does not police methods defined after the `attributes` block; later overrides remain unsupported. Duplicate attributes, repeated blocks, generated-method collisions, and invalid names or declaration options raise `ArgumentError` at declaration time.
+Before it installs generated methods, Strict rejects an attribute whose reader would collide with a public, protected, or private instance method defined directly on the declaring class. It also rejects methods reserved by `BasicObject`, the active Strict capability, or Strict's generated implementation, including `class`, `to_h`, `inspect`, `hash`, `eql?`, `initialize`, `pretty_print`, and `public_send`. `Strict::Object` applies the same checks to its generated writer.
+
+An attribute can override an inherited public, protected, or private method from a superclass or a non-Strict included module. The generated reader or writer is public and replaces the inherited behavior; it does not wrap or validate calls to the inherited method. Strict does not police methods defined after the `attributes` block; later overrides remain unsupported. Duplicate attributes, repeated blocks, prohibited generated-method collisions, and invalid names or declaration options raise `ArgumentError` at declaration time.
 
 #### Attribute introspection
 
