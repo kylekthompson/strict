@@ -26,20 +26,21 @@ module Strict
       private
 
       def define_reader(attribute)
-        define_method(attribute.name) do
-          instance_variable_get(attribute.instance_variable)
-        end
+        storage_name = attribute.instance_variable.to_s.delete_prefix("@").to_sym
+        reader_module = ::Module.new { attr_reader(storage_name) }
+        define_method(attribute.name, reader_module.instance_method(storage_name))
       end
 
       # rubocop:disable Metrics/MethodLength
       def define_writer(attribute)
+        instance_variable = attribute.instance_variable
         define_method(:"#{attribute.name}=") do |value|
           assignable_class = self.class
           value = attribute.coerce(value, for_class: assignable_class)
           configuration = Strict.configuration
 
           if attribute.valid?(value, configuration)
-            instance_variable_set(attribute.instance_variable, value)
+            instance_variable_set(instance_variable, value)
           else
             raise Strict::AssignmentError.new(
               assignable_class: assignable_class,
