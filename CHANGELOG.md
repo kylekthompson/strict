@@ -23,6 +23,8 @@
 - Check interface implementation signatures by substitutability: require every exposed keyword and reject only additional parameters that can constrain a valid interface call.
 - Reduce value and object hot-path allocations during initialization, `to_h`, equality, and hashing.
 - Share declaration invariants between attributes and parameters, with isolated backing storage for every distinct attribute name.
+- Automatically use a validator's coercer for attributes and parameters unless the declaration overrides or disables coercion.
+- Propagate default coercion through `ArrayOf` elements and `HashOf` keys and values.
 - Keep Strict configuration overrides in isolated internal execution-context storage to avoid collisions with application keys.
 - Generate attribute readers and writers through one shared implementation, with mutable writers bound directly to their declarations.
 - Return exact `Strict::Value` and `Strict::Object` instances unchanged from their class coercers while continuing to convert subclass instances.

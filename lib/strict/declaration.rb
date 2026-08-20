@@ -5,7 +5,12 @@ module Strict
     NOT_PROVIDED = ::Object.new.freeze
 
     class << self
-      def make(name, validator = Validators::Anything.instance, coerce: false, **defaults)
+      def make(
+        name,
+        validator = Validators::Anything.instance,
+        coerce: validator.respond_to?(:coercer) ? validator.coercer : false,
+        **defaults
+      )
         unless valid_defaults?(**defaults)
           raise ArgumentError, "Only one of 'default', 'default_value', or 'default_generator' can be provided"
         end

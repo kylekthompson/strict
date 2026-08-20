@@ -9,6 +9,12 @@ module Strict
     def call: (A value) -> B
   end
 
+  interface _CoercingValidator
+    include _Validator
+
+    def coercer: () -> _Coercer[untyped, untyped]
+  end
+
   interface _AttributeDescriptor
     def name: () -> Symbol
     def validator: () -> _Validator
@@ -25,9 +31,9 @@ module Strict
     def AllOf: (*_Validator validators) -> _Validator
     def AnyOf: (*_Validator validators) -> _Validator
     def Anything: () -> _Validator
-    def ArrayOf: (_Validator element_validator) -> _Validator
+    def ArrayOf: (_Validator element_validator) -> _CoercingValidator
     def Boolean: () -> _Validator
-    def HashOf: (Hash[_Validator, _Validator] validators) -> _Validator
+    def HashOf: (Hash[_Validator, _Validator] validators) -> _CoercingValidator
     def RangeOf: (_Validator element_validator) -> _Validator
   end
 

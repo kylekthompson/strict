@@ -42,6 +42,16 @@ RSpec.describe Strict::Parameter do
       expect(parameter.coercer).to be_truthy
     end
 
+    it "uses the validator's coercer by default" do
+      coercer = ->(value) { value.to_s }
+      validator = Object.new
+      validator.define_singleton_method(:coercer) { coercer }
+
+      parameter = described_class.make(:attr_name, validator)
+
+      expect(parameter.coercer).to be(coercer)
+    end
+
     it "accepts a value for 'default'" do
       parameter = described_class.make(:attr_name, default: 1)
 

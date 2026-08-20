@@ -203,6 +203,8 @@ end
 
 The module provides `===` from `violations`, and Strict prefixes each relative path with its enclosing attribute, parameter, or collection path.
 
+When an attribute or parameter validator provides a `.coercer`, Strict uses it automatically before validation. An explicit `coerce:` value overrides it, and `coerce: false` disables it. This lets nested Strict values, unions, and interfaces accept the input handled by their class coercers without repeating `coerce:` in each declaration. `ArrayOf` and `HashOf` propagate coercers from their element, key, and value validators, so compositions such as `ArrayOf(ValueClass)` also coerce automatically.
+
 ### `Strict::Method`
 
 ```rb

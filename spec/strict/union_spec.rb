@@ -122,25 +122,22 @@ RSpec.describe Strict::Union do
     expect(symbol_input).to eq(authorized)
   end
 
-  it "works as an attribute validator with optional coercion" do
+  it "automatically coerces values when used as an attribute validator" do
     result_class = union_class
     container_class = Class.new do
       include Strict::Value
 
       attributes do
         payment_result result_class
-        coerced_payment_result result_class, coerce: result_class.coercer
       end
     end
     payment_result = union_class::Declined.new(reason: "insufficient_funds")
 
     container = container_class.new(
-      payment_result: payment_result,
-      coerced_payment_result: { "status" => "declined", "reason" => "insufficient_funds" }
+      payment_result: { "status" => "declined", "reason" => "insufficient_funds" }
     )
 
-    expect(container.payment_result).to be(payment_result)
-    expect(container.coerced_payment_result).to eq(payment_result)
+    expect(container.payment_result).to eq(payment_result)
   end
 
   it "leaves existing members, nil, and non-hash-like values unchanged" do

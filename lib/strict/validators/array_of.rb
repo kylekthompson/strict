@@ -11,6 +11,11 @@ module Strict
         @element_validator = element_validator
       end
 
+      def coercer
+        element_coercer = element_validator.coercer if element_validator.respond_to?(:coercer)
+        Coercers::Array.new(element_coercer)
+      end
+
       def violations(value)
         return Validation.invalid(self, value) unless Array === value
 

@@ -406,6 +406,22 @@ RSpec.describe Strict::Interface do
         InterfaceTest::Interface.coercer.call(InterfaceTest::BadImplementation.new)
       end.to raise_error(Strict::ImplementationDoesNotConformError)
     end
+
+    it "automatically wraps implementations when the interface is used as a validator" do
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          implementation InterfaceTest::Interface
+        end
+      end
+      implementation = InterfaceTest::GoodImplementation.new
+
+      interface = value_class.new(implementation:).implementation
+
+      expect(interface).to be_an_instance_of(InterfaceTest::Interface)
+      expect(interface.implementation).to be(implementation)
+    end
   end
 
   describe "exposed methods" do
