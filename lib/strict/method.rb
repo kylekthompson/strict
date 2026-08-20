@@ -85,5 +85,7 @@ module Strict
         end
       end
     end
+
+    private_constant :ClassMethods
   end
 end

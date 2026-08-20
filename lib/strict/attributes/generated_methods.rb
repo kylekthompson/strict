@@ -33,8 +33,8 @@ module Strict
             declared_attributes: declared_attributes
           )
           target.instance_variable_set(DECLARATION_MARKER, true)
-          target.include(generated_methods)
-          target.include(Strict::Attributes::Instance)
+          target.include(Strict::Attributes::Instance, generated_methods)
+          target.define_singleton_method(:strict_attributes) { configuration }
           target.extend(Strict::Attributes::Class)
         end
         # rubocop:enable Metrics/MethodLength
@@ -44,7 +44,6 @@ module Strict
         super()
 
         validate_collisions!(target, declared_attributes, writable: writable)
-        const_set(Strict::Attributes::Class::CONSTANT, configuration)
         configuration.each do |attribute|
           define_reader(attribute)
           define_writer(attribute) if writable

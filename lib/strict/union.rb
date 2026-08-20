@@ -164,5 +164,7 @@ module Strict
         raise TypeError, "cannot instantiate union #{self.class} directly; instantiate one of its variants"
       end
     end
+
+    private_constant :ClassMethods, :Instance
   end
 end

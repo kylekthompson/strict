@@ -36,4 +36,40 @@ RSpec.describe Strict do
     end
     expect(described_class.configuration.sample_rate).to eq(1)
   end
+
+  it "does not expose implementation constants through consumer classes" do
+    value_class = Class.new do
+      include Strict::Value
+
+      attributes { nil }
+    end
+    object_class = Class.new do
+      include Strict::Object
+
+      attributes { nil }
+    end
+    method_class = Class.new { include Strict::Method }
+    interface_class = Class.new { include Strict::Interface }
+    union_class = Class.new { include Strict::Union }
+
+    expect(value_class.constants).not_to include(:STRICT_INTERNAL_ATTRIBUTES_CONFIGURATION__)
+    expect(object_class.constants).not_to include(:STRICT_INTERNAL_ATTRIBUTES_CONFIGURATION__)
+    expect(method_class.constants).not_to include(:ClassMethods)
+    expect(interface_class.constants).not_to include(:ClassMethods)
+    expect(union_class.constants).not_to include(:ClassMethods, :Instance)
+  end
+
+  it "does not reserve a configuration constant on value and object classes" do
+    [Strict::Value, Strict::Object].each do |capability|
+      strict_class = Class.new do
+        const_set(:STRICT_INTERNAL_ATTRIBUTES_CONFIGURATION__, :application_value)
+        include capability
+
+        attributes { name String }
+      end
+
+      expect(strict_class.const_get(:STRICT_INTERNAL_ATTRIBUTES_CONFIGURATION__, false)).to eq(:application_value)
+      expect(strict_class.new(name: "example").name).to eq("example")
+    end
+  end
 end
