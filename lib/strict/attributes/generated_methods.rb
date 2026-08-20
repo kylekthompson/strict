@@ -6,7 +6,8 @@ module Strict
       def self.install_on(target, writable:)
         target.define_singleton_method(:attributes) do |&block|
           block ||= -> {}
-          configuration = Strict::Attributes::Dsl.run(&block)
+          inherited_attributes = respond_to?(:strict_attributes) ? strict_attributes : []
+          configuration = Strict::Attributes::Dsl.run(attributes: inherited_attributes, &block)
           include Strict::Attributes::GeneratedMethods.new(configuration, writable: writable)
           include Strict::Attributes::Instance
           extend Strict::Attributes::Class

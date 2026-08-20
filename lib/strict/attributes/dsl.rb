@@ -4,8 +4,8 @@ module Strict
   module Attributes
     class Dsl < BasicObject
       class << self
-        def run(&)
-          dsl = new
+        def run(attributes: [], &)
+          dsl = new(attributes: attributes)
           dsl.instance_eval(&)
           ::Strict::Attributes::Configuration.new(attributes: dsl.__strict_dsl_internal_attributes.values)
         end
@@ -16,8 +16,8 @@ module Strict
 
       attr_reader :__strict_dsl_internal_attributes
 
-      def initialize
-        @__strict_dsl_internal_attributes = {}
+      def initialize(attributes:)
+        @__strict_dsl_internal_attributes = attributes.to_h { |attribute| [attribute.name, attribute] }
       end
 
       def strict_attribute(*, **)

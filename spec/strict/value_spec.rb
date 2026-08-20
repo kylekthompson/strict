@@ -8,6 +8,27 @@ RSpec.describe Strict::Value do
     expect(ValueClass.strict_attributes.map(&:name)).to eq(%i[foo bar baz])
   end
 
+  it "combines inherited and subclass attributes" do
+    person_class = Class.new do
+      include Strict::Value
+
+      attributes do
+        name String
+      end
+    end
+    employee_class = Class.new(person_class) do
+      attributes do
+        employee_id String
+      end
+    end
+
+    employee = employee_class.new(name: "Ada", employee_id: "employee_123")
+
+    expect(employee.to_h).to eq(name: "Ada", employee_id: "employee_123")
+    expect(employee_class.strict_attributes.map(&:name)).to eq(%i[name employee_id])
+    expect(person_class.strict_attributes.map(&:name)).to eq([:name])
+  end
+
   it "does not expose writer methods" do
     instance = build(:value)
 
