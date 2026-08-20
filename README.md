@@ -298,6 +298,88 @@ storage = Storage.new(Storages::Wat.new)
 # => Strict::ImplementationDoesNotConformError
 ```
 
+### RSpec extensions
+
+Strict provides supported, opt-in integration with RSpec 3.13. RSpec remains an optional dependency and is not loaded by
+`require "strict"`. Add RSpec to the test bundle:
+
+```rb
+group :test do
+  gem "rspec", "~> 3.13"
+end
+```
+
+Then require the adapter from the spec helper:
+
+```rb
+require "strict/rspec"
+```
+
+The adapter provides matchers for validators and interfaces:
+
+```rb
+expect(String).to validate("value")
+expect(String).not_to validate(1)
+
+expect(Storages::Memory.new).to conform_to(Storage)
+expect(Object.new).not_to conform_to(Storage)
+```
+
+When validation fails, `validate` uses `Strict::Violation` records to report root and nested
+`Strict::DetailedValidator` failure paths.
+
+`strict_double` builds an RSpec verifying double. For an interface, it stubs every exposed method to `nil` unless a
+different result is provided, so the double conforms without extra setup:
+
+```rb
+storage = strict_double(Storage, write: true, read: "contents")
+
+expect(storage).to conform_to(Storage)
+Storage.new(storage).read(key: "some/path")
+# => "contents"
+```
+
+RSpec instance doubles also satisfy Strict class validators for attributes, signed parameters, and return values. Plain
+doubles remain invalid:
+
+```rb
+class Item
+  include Strict::Value
+
+  attributes do
+    sku String
+  end
+end
+
+class Shipment
+  include Strict::Value
+
+  attributes do
+    item Item
+  end
+end
+
+item = instance_double(Item, sku: "item_123")
+Shipment.new(item: item)
+# => #<Shipment item=#<InstanceDouble(Item)>>
+
+Shipment.new(item: double("item"))
+# => Strict::InitializationError
+```
+
+Matcher objects can also stand in for validated fields or elements of built-in collection validators when constructing
+expected Strict values. RSpec recursively applies the nested matchers in argument expectations:
+
+```rb
+expect(dispatcher).to have_received(:ship).with(
+  shipment: Shipment.new(
+    item: have_attributes(sku: "item_123")
+  )
+)
+```
+
+This composition does not change normal Strict value equality or hashing.
+
 ### Configuration
 
 Strict exposes some configuration options which can be configured globally via `Strict.configure { ... }` or overridden

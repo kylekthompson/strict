@@ -174,6 +174,48 @@ Interface instances expose their `implementation`. The class coercer:
 
 Interface subclassing and re-exposing a method are outside the compatibility boundary.
 
+## RSpec integration
+
+Strict provides opt-in integration with RSpec 3.13. RSpec is not a runtime dependency and `require "strict"` does not
+load it. Applications that use the integration must add RSpec to their test bundle and load the adapter from their spec
+helper:
+
+```ruby
+require "strict/rspec"
+```
+
+Loading the adapter registers the `validate` and `conform_to` matchers and adds `strict_double` to RSpec example groups.
+
+### RSpec matchers
+
+`expect(validator).to validate(value)` applies the ordinary `===` validator protocol. For a
+`Strict::DetailedValidator`, it uses `violations(value)` and includes root or nested violation paths when the expectation
+fails. RSpec matcher objects and compatible instance doubles are accepted as test values. Exact failure-message wording
+and formatting are not fixed.
+
+`expect(implementation).to conform_to(interface)` checks the same public method and required-keyword conformance as
+constructing the interface. It does not invoke exposed methods. A failed expectation includes the conformance error's
+details, without a fixed wording or formatting contract.
+
+### RSpec doubles and matcher placeholders
+
+`strict_double(strict_class, stubs = {})` returns an RSpec instance verifying double. For a `Strict::Interface`, every
+exposed method is stubbed to return `nil` unless `stubs` provides another result. Calls through the interface still
+validate parameters and return values, so an omitted stub can cause `Strict::MethodReturnError` when `nil` is not a valid
+return. For other classes, only the supplied methods are stubbed. RSpec rejects stubs for methods that the doubled class
+does not expose.
+
+RSpec instance verifying doubles created by `strict_double` or `instance_double` satisfy a class or module validator
+when an instance of the doubled class would satisfy it. This applies to attributes, signed parameters, return values,
+and values nested inside `ArrayOf`, `HashOf`, or `AllOf`. Plain, non-verifying doubles do not bypass validation.
+
+RSpec matcher objects can stand in for validated test values at those same locations. When an expected `Strict::Value`
+is used in an RSpec argument expectation, RSpec recursively applies matcher objects in its attributes. The expected and
+actual values must have the same exact class. Loading the adapter does not change `Strict::Value#==`, `#eql?`, or `#hash`.
+
+`Strict::RSpec` is the public integration namespace. Its nested constants, singleton methods, generated RSpec matcher
+classes, RSpec proxy metadata, and reflection details are outside the compatibility boundary.
+
 ## Validators and coercers
 
 Any object that implements `===` can be a validator. This includes classes, modules, literals, and custom validators. When a validator rejects a value, Strict reports that validator in one `:invalid` violation at the current path.
