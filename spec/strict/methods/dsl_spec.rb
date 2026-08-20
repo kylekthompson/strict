@@ -56,14 +56,13 @@ RSpec.describe Strict::Methods::Dsl do
       expect(configuration.returns.validator).to be_an_instance_of(Strict::Validators::Boolean)
     end
 
-    it "allows overwriting parameters" do
-      configuration = described_class.run do
-        foo String
-        foo Integer
-      end
-
-      expect(configuration.parameters.map(&:name)).to eq(%i[foo])
-      expect(configuration.parameters.map(&:validator)).to eq([Integer])
+    it "rejects duplicate parameters" do
+      expect do
+        described_class.run do
+          foo String
+          foo Integer
+        end
+      end.to raise_error(ArgumentError)
     end
 
     it "allows manually creating parameters" do
@@ -96,6 +95,15 @@ RSpec.describe Strict::Methods::Dsl do
     it "rejects return coercion" do
       expect do
         described_class.run { returns String, coerce: ->(value) { value.to_s } }
+      end.to raise_error(ArgumentError)
+    end
+
+    it "rejects repeated return declarations" do
+      expect do
+        described_class.run do
+          returns String
+          returns Integer
+        end
       end.to raise_error(ArgumentError)
     end
   end

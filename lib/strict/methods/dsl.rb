@@ -22,15 +22,23 @@ module Strict
       def initialize
         @__strict_dsl_internal_parameters = {}
         @__strict_dsl_internal_returns = ::Strict::Return.make
+        @__strict_dsl_internal_returns_declared = false
       end
 
       def returns(*, **)
+        ::Kernel.raise ::ArgumentError, "Return value is already declared" if @__strict_dsl_internal_returns_declared
+
         self.__strict_dsl_internal_returns = ::Strict::Return.make(*, **)
+        @__strict_dsl_internal_returns_declared = true
         nil
       end
 
       def strict_parameter(*, **)
         parameter = ::Strict::Parameter.make(*, **)
+        if __strict_dsl_internal_parameters.key?(parameter.name)
+          ::Kernel.raise ::ArgumentError, "Parameter #{parameter.name.inspect} is already declared"
+        end
+
         __strict_dsl_internal_parameters[parameter.name] = parameter
         nil
       end

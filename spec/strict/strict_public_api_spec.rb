@@ -123,6 +123,47 @@ RSpec.describe Strict do
       expect(value.value!).to eq(:dangerous)
       expect(value.to_h).to eq(value: "plain", value?: 1, value!: :dangerous)
     end
+
+    it "rejects invalid attribute declarations before installing methods" do
+      invalid_declarations = [
+        -> { attributes { strict_attribute :"name=", String } },
+        -> { attributes { name String, default_generator: "not callable" } },
+        -> { attributes { name String, coerce: Object.new } },
+        lambda do
+          attributes do
+            name String
+            name Integer
+          end
+        end,
+        -> { attributes { to_h Hash } }
+      ]
+
+      invalid_declarations.each do |declaration|
+        expect do
+          Class.new do
+            include Strict::Value
+
+            class_exec(&declaration)
+          end
+        end.to raise_error(ArgumentError)
+      end
+    end
+
+    it "rejects repeated and inherited attribute declarations" do
+      parent_class = Class.new do
+        include Strict::Value
+
+        attributes { name String }
+      end
+
+      expect do
+        Class.new(parent_class) { attributes { name String } }
+      end.to raise_error(ArgumentError)
+
+      expect do
+        parent_class.attributes { employee_id String }
+      end.to raise_error(ArgumentError)
+    end
   end
 
   describe "objects" do
@@ -199,6 +240,18 @@ RSpec.describe Strict do
       expect(object.to_h).to eq(automatic: "child assigned", symbolic: "child assigned")
     end
 
+    it "rejects an attribute whose generated writer already exists" do
+      expect do
+        Class.new do
+          include Strict::Object
+
+          def name=(_value); end
+
+          attributes { name String }
+        end
+      end.to raise_error(ArgumentError)
+    end
+
     it "coerces before sampling each assignment once" do
       validations = []
       coercions = []
@@ -254,7 +307,7 @@ RSpec.describe Strict do
           anything Anything()
           array ArrayOf(Integer)
           boolean Boolean()
-          hash HashOf(Symbol => Integer)
+          hash_value HashOf(Symbol => Integer)
           range RangeOf(Integer)
           custom custom_validator
           coerced_array ArrayOf(String), coerce: ToArray(with: ->(value) { value.to_s })
@@ -270,7 +323,7 @@ RSpec.describe Strict do
         anything: Object.new,
         array: [1, 2],
         boolean: false,
-        hash: { one: 1 },
+        hash_value: { one: 1 },
         range: 1..3,
         custom: :custom,
         coerced_array: [1, 2],
@@ -286,7 +339,7 @@ RSpec.describe Strict do
           anything: nil,
           array: [],
           boolean: true,
-          hash: {},
+          hash_value: {},
           range: 1..3,
           custom: :custom,
           coerced_array: [],
@@ -462,6 +515,36 @@ RSpec.describe Strict do
           sig { returns String, coerce: ->(value) { value.to_s } }
         end
       end.to raise_error(ArgumentError)
+    end
+
+    it "rejects invalid and duplicate signature declarations" do
+      invalid_signatures = [
+        lambda do
+          sig do
+            value Integer
+            value String
+          end
+        end,
+        lambda do
+          sig do
+            returns String
+            returns Integer
+          end
+        end,
+        -> { sig { value Integer, coerce: true } },
+        -> { sig { value Integer, default_generator: 1 } },
+        -> { sig { strict_parameter :"value=", String } }
+      ]
+
+      invalid_signatures.each do |signature|
+        expect do
+          Class.new do
+            include Strict::Method
+
+            class_exec(&signature)
+          end
+        end.to raise_error(ArgumentError)
+      end
     end
   end
 

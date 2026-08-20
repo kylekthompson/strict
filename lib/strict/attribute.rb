@@ -2,6 +2,14 @@
 
 module Strict
   class Attribute < Declaration
+    class << self
+      private
+
+      def coercer_supported?(coercer)
+        super || coercer.equal?(true) || coercer.is_a?(Symbol) || coercer.respond_to?(:call)
+      end
+    end
+
     attr_reader :instance_variable
 
     def initialize(name:, validator:, default_generator:, coercer:)
