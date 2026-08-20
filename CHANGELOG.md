@@ -27,20 +27,20 @@
 
 ### Performance
 
-Representative microbenchmarks compared `90ba08a` (before) with `dff84b2` (after) on Ruby 3.3.12, with YJIT disabled. Both revisions used the same pinned harness and public workloads. Results are the median of six interleaved process-run medians; each run used 50,000 warmup iterations, 200,000 measured iterations, and nine timing samples. Allocation counts were stable across all six runs.
+Representative microbenchmarks compared `90ba08a` (before) with `daa388d` (after) on Ruby 3.3.12, with YJIT disabled. Both revisions used the same pinned harness and public workloads. Results are the median of six interleaved process-run medians; each run used 50,000 warmup iterations, 200,000 measured iterations, and nine timing samples. Allocation counts were stable across all six runs.
 
-| Operation | `90ba08a` ns/op | `dff84b2` ns/op | Change | Allocations/op |
+| Operation | `90ba08a` ns/op | `daa388d` ns/op | Change | Allocations/op |
 | --- | ---: | ---: | ---: | ---: |
-| Value initialization | 4,537 | 2,017 | -56% | 11 → 4 |
-| Mutable assignment | 477 | 415 | -13% | 0 → 0 |
-| Verified method call | 2,384 | 1,996 | -16% | 10 → 6 |
-| Interface construction | 5,582 | 1,283 | -77% | 19 → 4 |
-| Interface call | 3,535 | 2,425 | -31% | 16 → 8 |
-| `to_h` | 1,468 | 902 | -39% | 6 → 2 |
-| Equality | 2,982 | 1,512 | -49% | 12 → 3 |
-| Hashing | 2,010 | 940 | -53% | 6 → 2 |
+| Value initialization | 4,339 | 2,017 | -54% | 11 → 4 |
+| Mutable assignment | 456 | 431 | -5% | 0 → 0 |
+| Verified method call | 2,118 | 1,981 | -6% | 10 → 6 |
+| Interface construction | 5,054 | 1,145 | -77% | 19 → 4 |
+| Interface call | 3,230 | 2,340 | -28% | 16 → 8 |
+| `to_h` | 1,301 | 852 | -35% | 6 → 2 |
+| Equality | 2,786 | 1,433 | -49% | 12 → 3 |
+| Hashing | 1,847 | 926 | -50% | 6 → 2 |
 
-The equal-weight geometric mean of the eight after/before timing ratios is 0.54, or 46% lower. These microbenchmarks are environment-dependent measurements, not performance guarantees.
+The equal-weight geometric mean of the eight after/before timing ratios is 0.57, or 43% lower. These microbenchmarks are environment-dependent measurements, not performance guarantees.
 
 ## [0.0.0] - 2022-10-01
 
