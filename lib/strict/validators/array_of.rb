@@ -3,16 +3,26 @@
 module Strict
   module Validators
     class ArrayOf
+      include DetailedValidator
+
       attr_reader :element_validator
 
       def initialize(element_validator)
         @element_validator = element_validator
       end
 
-      def ===(value)
-        Array === value && value.all? do |v|
-          element_validator === v
+      def violations(value)
+        return Validation.invalid(self, value) unless Array === value
+
+        violations = nil
+        value.each_with_index do |element, index|
+          element_violations = Validation.violations(element_validator, element)
+          next if element_violations.empty?
+
+          violations ||= []
+          violations.concat(Validation.prepend_path(element_violations, index))
         end
+        violations || Validation::NONE
       end
 
       def inspect

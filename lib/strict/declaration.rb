@@ -49,6 +49,7 @@ module Strict
       @default_generator = default_generator
       @coercer = coercer
       @optional = !default_generator.equal?(NOT_PROVIDED)
+      @detailed_validator = DetailedValidator === validator
     end
 
     def optional?
@@ -56,9 +57,15 @@ module Strict
     end
 
     def valid?(value, configuration = Strict.configuration)
-      return true unless configuration.validate?
+      violations(value, configuration).empty?
+    end
 
-      validator === value
+    def violations(value, configuration = Strict.configuration)
+      return Validation::NONE unless configuration.validate?
+      return validator.violations(value) if @detailed_validator
+      return Validation::NONE if validator === value
+
+      Validation.invalid(validator, value)
     end
   end
 end

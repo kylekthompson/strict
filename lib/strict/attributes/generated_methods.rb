@@ -39,14 +39,16 @@ module Strict
           assignable_class = self.class
           value = attribute.coerce(value, for_class: assignable_class)
           configuration = Strict.configuration
+          violations = attribute.violations(value, configuration)
 
-          if attribute.valid?(value, configuration)
+          if violations.empty?
             instance_variable_set(instance_variable, value)
           else
             raise Strict::AssignmentError.new(
               assignable_class: assignable_class,
               invalid_attribute: attribute,
-              value: value
+              value: value,
+              violations: Strict::Validation.prepend_path(violations, attribute.name)
             )
           end
         end

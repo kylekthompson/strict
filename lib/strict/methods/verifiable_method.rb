@@ -90,6 +90,7 @@ module Strict
       def verify_parameters!(args, kwargs, configuration)
         invalid_parameters = nil
         missing_parameters = nil
+        violations = nil
         verified_args = nil
         verified_kwargs = nil
         positional_argument_count = args.length
@@ -134,6 +135,8 @@ module Strict
           elsif original_value.equal?(NOT_PROVIDED)
             missing_parameters ||= []
             missing_parameters << parameter.name
+            violations ||= []
+            violations << Validation.missing(parameter.validator, path: [parameter.name])
             next
           else
             value = original_value
@@ -142,7 +145,8 @@ module Strict
 
           value = parameter.coerce(value)
           changed ||= !value.equal?(original_value)
-          if parameter.valid?(value, configuration)
+          parameter_violations = parameter.violations(value, configuration)
+          if parameter_violations.empty?
             case binding.kind
             when :positional, :optional_positional
               if verified_args
@@ -171,6 +175,8 @@ module Strict
           else
             invalid_parameters ||= {}
             invalid_parameters[parameter] = value
+            violations ||= []
+            violations.concat(Validation.prepend_path(parameter_violations, parameter.name))
           end
         end
 
@@ -181,21 +187,32 @@ module Strict
           return [verified_args || args, verified_kwargs || kwargs]
         end
 
+        remaining_args = args.slice(positional_index, positional_argument_count - positional_index) || []
+        remaining_kwargs = remaining_kwargs_from(kwargs)
+        violations ||= []
+        remaining_args.each_with_index do |argument, offset|
+          violations << Validation.unexpected(argument, path: [positional_index + offset])
+        end
+        remaining_kwargs.each do |name, value|
+          violations << Validation.unexpected(value, path: [name])
+        end
         raise Strict::MethodCallError.new(
           verifiable_method: self,
-          remaining_args: args.slice(positional_index, positional_argument_count - positional_index) || [],
-          remaining_kwargs: remaining_kwargs_from(kwargs),
+          remaining_args: remaining_args,
+          remaining_kwargs: remaining_kwargs,
           invalid_parameters: invalid_parameters,
-          missing_parameters: missing_parameters
+          missing_parameters: missing_parameters,
+          violations: violations
         )
       end
       # rubocop:enable Metrics/AbcSize, Metrics/BlockLength, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
       def verify_returns!(value, configuration)
         value = returns.coerce(value)
-        return if returns.valid?(value, configuration)
+        violations = returns.violations(value, configuration)
+        return if violations.empty?
 
-        raise Strict::MethodReturnError.new(verifiable_method: self, value: value)
+        raise Strict::MethodReturnError.new(verifiable_method: self, value: value, violations: violations)
       end
 
       private

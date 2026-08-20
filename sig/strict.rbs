@@ -38,6 +38,7 @@ module Strict
 
   type attribute_coercion = bool | Symbol | _Coercer[untyped, untyped]
   type method_coercion = false | _Coercer[untyped, untyped]
+  type violation_code = :invalid | :missing | :unexpected
 
   interface _AttributesDsl
     include _ValidationDsl
@@ -141,12 +142,31 @@ module Strict
   module Union
   end
 
+  module DetailedValidator
+    def ===: (untyped value) -> bool
+    def violations: (untyped value) -> Array[Violation]
+  end
+
   class Configuration
     attr_accessor random: Random::Formatter
     attr_accessor sample_rate: Numeric
   end
 
+  class Violation
+    def initialize: (
+      path: Array[untyped],
+      code: violation_code,
+      value: untyped,
+      validator: _Validator?
+    ) -> void
+    def path: () -> Array[untyped]
+    def code: () -> violation_code
+    def value: () -> untyped
+    def validator: () -> _Validator?
+  end
+
   class Error < StandardError
+    def violations: () -> Array[Violation]
   end
 
   class AssignmentError < Error

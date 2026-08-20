@@ -13,12 +13,19 @@ module Strict
     def initialize(validator:, coercer:)
       @validator = validator
       @coercer = coercer
+      @detailed_validator = DetailedValidator === validator
     end
 
     def valid?(value, configuration = Strict.configuration)
-      return true unless configuration.validate?
+      violations(value, configuration).empty?
+    end
 
-      validator === value
+    def violations(value, configuration = Strict.configuration)
+      return Validation::NONE unless configuration.validate?
+      return validator.violations(value) if @detailed_validator
+      return Validation::NONE if validator === value
+
+      Validation.invalid(validator, value)
     end
 
     def coerce(value)

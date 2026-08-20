@@ -4,7 +4,15 @@ module Strict
   class MethodCallError < Error
     attr_reader :verifiable_method, :remaining_args, :remaining_kwargs, :invalid_parameters, :missing_parameters
 
-    def initialize(verifiable_method:, remaining_args:, remaining_kwargs:, invalid_parameters:, missing_parameters:) # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/MethodLength, Metrics/ParameterLists
+    def initialize(
+      verifiable_method:,
+      remaining_args:,
+      remaining_kwargs:,
+      invalid_parameters:,
+      missing_parameters:,
+      violations: Validation::NONE
+    )
       super(
         message_from(
           verifiable_method: verifiable_method,
@@ -12,7 +20,8 @@ module Strict
           remaining_kwargs: remaining_kwargs,
           invalid_parameters: invalid_parameters,
           missing_parameters: missing_parameters
-        )
+        ),
+        violations: violations
       )
 
       @verifiable_method = verifiable_method
@@ -21,6 +30,7 @@ module Strict
       @invalid_parameters = invalid_parameters
       @missing_parameters = missing_parameters
     end
+    # rubocop:enable Metrics/MethodLength, Metrics/ParameterLists
 
     private
 

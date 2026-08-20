@@ -176,7 +176,29 @@ Interface subclassing and re-exposing a method are outside the compatibility bou
 
 ## Validators and coercers
 
-Any object that implements `===` can be a validator. This includes classes, modules, literals, and custom validators.
+Any object that implements `===` can be a validator. This includes classes, modules, literals, and custom validators. When a validator rejects a value, Strict reports that validator in one `:invalid` violation at the current path.
+
+A custom validator can opt into nested structured failures by including `Strict::DetailedValidator` and implementing `violations(value)`. The method must return an array of `Strict::Violation` records and return an empty array when the value is valid. Each violation path is relative to the validated value; Strict prefixes paths when the validator is nested inside a declaration or a built-in detailed validator. `Strict::DetailedValidator` implements `===` from `violations`, so the custom validator does not need to implement both methods.
+
+```ruby
+class Emails
+  include Strict::DetailedValidator
+
+  def violations(value)
+    unless Array === value
+      return [Strict::Violation.new(path: [], code: :invalid, value: value, validator: Array)]
+    end
+
+    value.each_with_index.filter_map do |email, index|
+      next if String === email
+
+      Strict::Violation.new(path: [index], code: :invalid, value: email, validator: String)
+    end
+  end
+end
+```
+
+`Strict::Violation.new` accepts the four keyword arguments exposed by its readers: `path:`, `code:`, `value:`, and `validator:`. Validators that only implement `===` remain fully supported and do not need to include `Strict::DetailedValidator`.
 
 Attribute and method DSL blocks provide these validator constructors:
 
@@ -224,6 +246,17 @@ These exception classes are public and inherit from `Strict::Error`:
 
 Messages identify the failure but their exact wording and formatting are not fixed. Exception constructor signatures are internal.
 
+Every `Strict::Error` provides `#violations`, which returns an array of `Strict::Violation` records. Assignment, initialization, method-call, and method-return errors report runtime validation and structural input failures. Other errors return an empty array.
+
+Each violation provides:
+
+- `path`: the location of the failure;
+- `code`: `:invalid`, `:missing`, or `:unexpected`;
+- `value`: the rejected or unexpected value, or `nil` for a missing value;
+- `validator`: the validator that rejected or required the value, or `nil` for an unexpected value.
+
+An attribute or parameter name is the first path segment. Array elements use zero-based indices, and hash entries use their actual keys. Unexpected positional arguments use their zero-based argument indices. Return values start at the root, so a simple invalid return has an empty path and a nested return starts with its collection segment. `ArrayOf`, `HashOf`, and `AllOf` preserve nested failure paths. Failure order is not fixed.
+
 The supported readers are:
 
 - `AssignmentError#value`
@@ -237,6 +270,6 @@ Readers that expose attribute, parameter, or method descriptors are internal.
 
 ## Constants and implementation details
 
-`Strict::VERSION` is public. `Strict::ISSUE_TRACKER` is internal.
+`Strict::VERSION`, `Strict::Violation`, and `Strict::DetailedValidator` are public. `Strict::ISSUE_TRACKER` is internal.
 
 `Strict::Attribute`, `Strict::Parameter`, `Strict::Return`, `strict_class_methods`, and `strict_instance_methods` are internal. The `Strict::Accessor`, `Strict::Reader`, `Strict::Attributes`, `Strict::Dsl`, `Strict::Interfaces`, `Strict::Methods`, and `Strict::Unions` namespaces and their contents are also internal.
