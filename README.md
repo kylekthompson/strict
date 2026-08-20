@@ -355,6 +355,19 @@ Shipment.new(item: double("item"))
 # => Strict::InitializationError
 ```
 
+Matcher objects can also stand in for validated fields when constructing expected Strict values. RSpec recursively
+applies the nested matchers in argument expectations:
+
+```rb
+expect(dispatcher).to have_received(:ship).with(
+  shipment: Shipment.new(
+    item: have_attributes(sku: "item_123")
+  )
+)
+```
+
+This composition does not change normal Strict value equality or hashing.
+
 ### Configuration
 
 Strict exposes some configuration options which can be configured globally via `Strict.configure { ... }` or overridden
