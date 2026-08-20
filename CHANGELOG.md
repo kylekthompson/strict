@@ -46,6 +46,61 @@ Representative microbenchmarks compared `90ba08a` (before) with `daa388d` (after
 
 The equal-weight geometric mean of the eight after/before timing ratios is 0.57, or 43% lower. These microbenchmarks are environment-dependent measurements, not performance guarantees.
 
+## [1.5.0] - 2023-04-12
+
+### Added
+
+- Add global configuration through `Strict.configure` and nested, thread-local overrides through `Strict.with_overrides`.
+- Add configurable validation sampling for attributes, parameters, and return values through `sample_rate` and `random`.
+
+## [1.4.0] - 2022-11-02
+
+### Changed
+
+- Allow interface implementations to use `*args` and `**kwargs` for parameters they do not declare directly, while continuing to validate calls made through the interface.
+
+## [1.3.1] - 2022-10-20
+
+### Fixed
+
+- Support parameterless methods in `Strict::Interface` without generating invalid method syntax.
+
+## [1.3.0] - 2022-10-18
+
+### Added
+
+- Add `.coercer` to classes that extend `Strict::Interface` so they can validate and wrap implementations through the coercion protocol.
+
+## [1.2.0] - 2022-10-14
+
+### Changed
+
+- Support Ruby 3.0 and newer instead of requiring Ruby 3.1 or newer.
+
+## [1.1.0] - 2022-10-14
+
+### Added
+
+- Add `Strict::Interface` for defining validated interfaces and checking that implementations conform to their exposed methods.
+- Add coercers for `Strict::Value` and `Strict::Object` classes and for array and hash values.
+
+## [1.0.0] - 2022-10-12
+
+### Added
+
+- Publish the initial Strict release with immutable `Strict::Value` classes, mutable `Strict::Object` classes, and runtime method-call validation through `Strict::Method`.
+- Add the attribute and method-signature DSLs, built-in validators, coercion, structured errors, value equality and cloning, and object assignment validation.
+
 ## [0.0.0] - 2022-10-01
 
-- Initial release
+- Start initial development.
+
+[Unreleased]: https://github.com/kylekthompson/strict/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/kylekthompson/strict/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/kylekthompson/strict/compare/v1.3.1...v1.4.0
+[1.3.1]: https://github.com/kylekthompson/strict/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/kylekthompson/strict/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/kylekthompson/strict/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/kylekthompson/strict/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/kylekthompson/strict/releases/tag/v1.0.0
+[0.0.0]: https://github.com/kylekthompson/strict/commit/27fbe42e0d0d3c5ce86493e1252cf889f5a746d9
