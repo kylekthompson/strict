@@ -4,6 +4,14 @@ require "spec_helper"
 require "strict/rspec"
 
 RSpec.describe Strict::RSpec do
+  describe "public surface" do
+    it "exposes the helper through RSpec without exposing adapter internals" do
+      expect(self).to respond_to(:strict_double)
+      expect(described_class.constants(false)).to be_empty
+      expect(described_class.singleton_methods(false)).to be_empty
+    end
+  end
+
   describe "composable Strict values" do
     it "supports nested RSpec matchers in received arguments" do
       nested_value_class = Struct.new(:a)
