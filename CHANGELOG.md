@@ -3,6 +3,7 @@
 ### Added
 
 - Define and characterize the supported next-major API in `API.md`, provide RBS signatures for that boundary, validate them in the default checks, and add repeatable timing and allocation benchmark tooling.
+- Add closed discriminated unions whose generated variants use `Strict::Value` for attributes and value behavior.
 
 ### Breaking changes
 

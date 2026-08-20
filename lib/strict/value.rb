@@ -10,6 +10,11 @@ module Strict
       self.class.new(**to_h, **attributes)
     end
 
+    def deconstruct_keys(keys)
+      attributes = to_h
+      keys ? attributes.slice(*keys) : attributes
+    end
+
     def eql?(other)
       return false unless self.class.equal?(other.class)
 

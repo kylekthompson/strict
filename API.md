@@ -11,6 +11,7 @@ include Strict::Value
 include Strict::Object
 include Strict::Method
 include Strict::Interface
+include Strict::Union
 ```
 
 The former `extend Strict::Method` and `extend Strict::Interface` forms are not part of this major-version API.
@@ -35,6 +36,7 @@ Both capabilities provide:
 `Strict::Value` does not provide writers. It provides:
 
 - `with(**attributes)`, which returns a validated instance of the same class;
+- `deconstruct_keys(keys)`, for Ruby hash and class patterns;
 - `==` and `eql?`, based on exact class and attribute values;
 - `hash`, consistent with `eql?`.
 
@@ -68,6 +70,69 @@ Only one default option can be present on one declaration.
 - `true`, which calls the class method `coerce_<attribute>`.
 
 The generated class `coercer` returns `nil` and non-hash-like values unchanged. For hash-like input, it recognizes declared symbol or string keys and initializes the class with those values.
+
+### Discriminated unions
+
+`Strict::Union` defines a closed, discriminated union of generated value-object variants. A union must declare one discriminator before it declares variants:
+
+```ruby
+class PaymentResult
+  include Strict::Union
+
+  discriminator :status
+
+  variant :authorized, tag: "payment.authorized" do
+    attributes do
+      authorization_id String
+      amount_in_cents Integer
+    end
+
+    def successful? = true
+  end
+
+  variant :declined do
+    attributes do
+      reason String
+    end
+
+    def successful? = false
+  end
+end
+```
+
+There is no default discriminator. A variant name must be a lower snake-case string or symbol, and Strict generates its PascalCase nested subclass. By default, the discriminator tag is the name's corresponding symbol. The optional `tag:` can assign a different string or symbol. For example, `variant :requires_action, tag: "action-required"` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `"action-required"`.
+
+The variant block configures the generated subclass. It can include modules, define methods, and contain zero or one `attributes` block. Strict combines that block with an implicit first attribute containing the discriminator's fixed default value:
+
+```ruby
+PaymentResult::Authorized.new(
+  authorization_id: "auth_123",
+  amount_in_cents: 1_000
+).to_h
+# => { status: "payment.authorized", authorization_id: "auth_123", amount_in_cents: 1_000 }
+```
+
+Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, and pattern matching. A variant declaration cannot redeclare the discriminator. The union base cannot be instantiated directly.
+
+`PaymentResult === value` is true only when `value` has the exact class of a registered variant. Generated variant classes retain normal Ruby class matching, including matching instances of their subclasses. Union and variant inheritance are outside the compatibility boundary.
+
+The union class `coercer`:
+
+- returns `nil` and non-hash-like values unchanged;
+- returns an existing exact union member unchanged;
+- accepts the discriminator as a symbol or string key;
+- accepts a registered tag as its equivalent symbol or string value and stores its configured form;
+- dispatches hash-like input through the selected variant's value coercer;
+- raises `ArgumentError` when the discriminator is missing or unknown.
+
+A union class can be an attribute or method validator. Add its coercer when the declaration must also accept hash-like input:
+
+```ruby
+payment_result PaymentResult
+coerced_payment_result PaymentResult, coerce: PaymentResult.coercer
+```
+
+Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid variant name or tag, replacing an existing generated constant, declaring multiple attribute blocks, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
 
 ### Signed methods
 
@@ -167,4 +232,4 @@ Readers that expose attribute, parameter, or method descriptors are internal.
 
 `Strict::VERSION` is public. `Strict::ISSUE_TRACKER` is internal.
 
-`Strict::Attribute`, `Strict::Parameter`, `Strict::Return`, `strict_class_methods`, and `strict_instance_methods` are internal. The `Strict::Accessor`, `Strict::Reader`, `Strict::Attributes`, `Strict::Dsl`, `Strict::Interfaces`, and `Strict::Methods` namespaces and their contents are also internal.
+`Strict::Attribute`, `Strict::Parameter`, `Strict::Return`, `strict_class_methods`, and `strict_instance_methods` are internal. The `Strict::Accessor`, `Strict::Reader`, `Strict::Attributes`, `Strict::Dsl`, `Strict::Interfaces`, `Strict::Methods`, and `Strict::Unions` namespaces and their contents are also internal.

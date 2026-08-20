@@ -124,6 +124,13 @@ RSpec.describe Strict::Value do
     expect(instance.to_h).to eq(foo: 1, bar: "2", baz: "3")
   end
 
+  it "deconstructs attributes for pattern matching" do
+    instance = build(:value)
+
+    expect(instance.deconstruct_keys(nil)).to eq(foo: 1, bar: "2", baz: "3")
+    expect(instance.deconstruct_keys(%i[foo missing])).to eq(foo: 1)
+  end
+
   it "can be inspected" do
     instance = build(:value)
 

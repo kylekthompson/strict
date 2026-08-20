@@ -9,11 +9,13 @@ RSpec.describe Strict do
       object_class = Class.new { include Strict::Object }
       method_class = Class.new { include Strict::Method }
       interface_class = Class.new { include Strict::Interface }
+      union_class = Class.new { include Strict::Union }
 
       expect(value_class).to respond_to(:attributes)
       expect(object_class).to respond_to(:attributes)
       expect(method_class).to respond_to(:sig)
       expect(interface_class).to respond_to(:expose)
+      expect(union_class).to respond_to(:discriminator, :variant, :coercer)
     end
   end
 

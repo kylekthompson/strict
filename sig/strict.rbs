@@ -95,6 +95,20 @@ module Strict
     def coercer: () -> _Coercer[untyped, untyped]
   end
 
+  interface _UnionVariantClass
+    def attributes: () { () [self: _AttributesDsl] -> untyped } -> void
+  end
+
+  # Extend this type-only interface in application signatures for classes that
+  # include Strict::Union.
+  interface _UnionClass
+    def discriminator: (String | Symbol name) -> void
+    def variant: (String | Symbol name, ?tag: String | Symbol) -> void
+               | (String | Symbol name, ?tag: String | Symbol) { () [self: _UnionVariantClass] -> untyped } -> void
+    def coercer: () -> _Coercer[untyped, untyped]
+    def ===: (untyped value) -> bool
+  end
+
   def self.configuration: () -> Configuration
   def self.configure: () { (Configuration configuration) -> untyped } -> void
   def self.with_overrides: (
@@ -106,6 +120,7 @@ module Strict
     include _AttributesInstance
 
     def with: (**untyped attributes) -> self
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
@@ -120,6 +135,9 @@ module Strict
 
   module Interface
     def implementation: () -> untyped
+  end
+
+  module Union
   end
 
   class Configuration

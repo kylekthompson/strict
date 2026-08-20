@@ -53,6 +53,57 @@ Money.new(amount_in_cents: 100_00) == Money.new(amount_in_cents: 100_00)
 # => true
 ```
 
+### `Strict::Union`
+
+```rb
+class PaymentResult
+  include Strict::Union
+
+  discriminator :status
+
+  variant :authorized, tag: "payment.authorized" do
+    attributes do
+      authorization_id String
+      amount_in_cents Integer
+    end
+
+    def successful? = true
+  end
+
+  variant :declined do
+    attributes do
+      reason String
+    end
+
+    def successful? = false
+  end
+end
+
+authorized = PaymentResult::Authorized.new(
+  authorization_id: "auth_123",
+  amount_in_cents: 1_000
+)
+authorized.to_h
+# => { status: "payment.authorized", authorization_id: "auth_123", amount_in_cents: 1_000 }
+
+authorized.successful?
+# => true
+
+result = PaymentResult.coercer.call(
+  "status" => "declined",
+  "reason" => "insufficient_funds"
+)
+# => #<PaymentResult::Declined status=:declined reason="insufficient_funds">
+
+case result
+in PaymentResult::Authorized(authorization_id:)
+  authorization_id
+in PaymentResult::Declined(reason:)
+  reason
+end
+# => "insufficient_funds"
+```
+
 ### `Strict::Object`
 
 ```rb
