@@ -316,6 +316,9 @@ expect(Storages::Memory.new).to conform_to(Storage)
 expect(Object.new).not_to conform_to(Storage)
 ```
 
+When validation fails, `validate` uses `Strict::Violation` records to report root and nested
+`Strict::DetailedValidator` failure paths.
+
 `strict_double` builds an RSpec verifying double. For an interface, it stubs every exposed method to `nil` unless a
 different result is provided, so the double conforms without extra setup:
 
