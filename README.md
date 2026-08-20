@@ -298,6 +298,63 @@ storage = Storage.new(Storages::Wat.new)
 # => Strict::ImplementationDoesNotConformError
 ```
 
+### Experimental RSpec extensions
+
+Add RSpec to the test bundle and require the opt-in adapter from the spec helper:
+
+```rb
+require "strict/rspec"
+```
+
+The adapter provides matchers for validators and interfaces:
+
+```rb
+expect(String).to validate("value")
+expect(String).not_to validate(1)
+
+expect(Storages::Memory.new).to conform_to(Storage)
+expect(Object.new).not_to conform_to(Storage)
+```
+
+`strict_double` builds an RSpec verifying double. For an interface, it stubs every exposed method to `nil` unless a
+different result is provided, so the double conforms without extra setup:
+
+```rb
+storage = strict_double(Storage, write: true, read: "contents")
+
+expect(storage).to conform_to(Storage)
+Storage.new(storage).read(key: "some/path")
+# => "contents"
+```
+
+RSpec instance doubles also satisfy Strict class validators for attributes, signed parameters, and return values. Plain
+doubles remain invalid:
+
+```rb
+class Item
+  include Strict::Value
+
+  attributes do
+    sku String
+  end
+end
+
+class Shipment
+  include Strict::Value
+
+  attributes do
+    item Item
+  end
+end
+
+item = instance_double(Item, sku: "item_123")
+Shipment.new(item: item)
+# => #<Shipment item=#<InstanceDouble(Item)>>
+
+Shipment.new(item: double("item"))
+# => Strict::InitializationError
+```
+
 ### Configuration
 
 Strict exposes some configuration options which can be configured globally via `Strict.configure { ... }` or overridden
