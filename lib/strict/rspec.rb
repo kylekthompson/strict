@@ -4,6 +4,7 @@ require "strict"
 require "rspec/core"
 require "rspec/expectations"
 require "rspec/mocks"
+require "rspec/support/fuzzy_matcher"
 
 module Strict
   module RSpec
@@ -12,7 +13,11 @@ module Strict
 
     class << self
       def valid?(validator, value)
-        validator === value || instance_double_valid_for?(validator, value)
+        validator === value || matcher?(value) || instance_double_valid_for?(validator, value)
+      end
+
+      def matcher?(value)
+        ::RSpec::Support.is_a_matcher?(value)
       end
 
       def instance_double_valid_for?(validator, value)
@@ -30,9 +35,21 @@ module Strict
       end
     end
 
-    module ValidatesInstanceDoubles
+    module AcceptsMatchersAndDoubles
       def valid?(value, configuration = Strict.configuration)
-        super || Strict::RSpec.instance_double_valid_for?(validator, value)
+        super || Strict::RSpec.matcher?(value) || Strict::RSpec.instance_double_valid_for?(validator, value)
+      end
+    end
+
+    module ComposableValue
+      def ===(other)
+        return false unless other.instance_of?(self.class)
+
+        self.class.strict_attributes.all? do |attribute|
+          expected = public_send(attribute.name)
+          actual = other.public_send(attribute.name)
+          ::RSpec::Support::FuzzyMatcher.values_match?(expected, actual)
+        end
       end
     end
 
@@ -44,8 +61,9 @@ module Strict
   end
 end
 
-Strict::Declaration.prepend(Strict::RSpec::ValidatesInstanceDoubles)
-Strict::Return.prepend(Strict::RSpec::ValidatesInstanceDoubles)
+Strict::Declaration.prepend(Strict::RSpec::AcceptsMatchersAndDoubles)
+Strict::Return.prepend(Strict::RSpec::AcceptsMatchersAndDoubles)
+Strict::Value.prepend(Strict::RSpec::ComposableValue)
 
 RSpec.configure do |config|
   config.include Strict::RSpec::ExampleMethods

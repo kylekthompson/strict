@@ -4,6 +4,32 @@ require "spec_helper"
 require "strict/rspec"
 
 RSpec.describe Strict::RSpec do
+  describe "composable Strict values" do
+    it "supports nested RSpec matchers in received arguments" do
+      nested_value_class = Struct.new(:a)
+      nested_validator = nested_value_class
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          other_value nested_validator
+        end
+      end
+      receiver_class = Class.new do
+        def bar(value:); end
+      end
+      receiver = instance_spy(receiver_class)
+      receiver.bar(value: value_class.new(other_value: nested_value_class.new(1)))
+
+      expect(receiver).to have_received(:bar).with(
+        value: value_class.new(other_value: have_attributes(a: 1))
+      )
+      expect(receiver).not_to have_received(:bar).with(
+        value: value_class.new(other_value: have_attributes(a: 2))
+      )
+    end
+  end
+
   describe "strict_double" do
     it "builds a conforming interface implementation double" do
       interface_class = Class.new do
