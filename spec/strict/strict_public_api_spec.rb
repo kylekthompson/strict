@@ -1,0 +1,367 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+
+RSpec.describe Strict do
+  describe "capability inclusion" do
+    it "adds each capability with include" do
+      value_class = Class.new { include Strict::Value }
+      object_class = Class.new { include Strict::Object }
+      method_class = Class.new { include Strict::Method }
+      interface_class = Class.new { include Strict::Interface }
+
+      expect(value_class).to respond_to(:attributes)
+      expect(object_class).to respond_to(:attributes)
+      expect(method_class).to respond_to(:sig)
+      expect(interface_class).to respond_to(:expose)
+    end
+  end
+
+  describe "values" do
+    it "supports declarations, coercion, defaults, introspection, copying, equality, and hashing" do
+      generated_default = 0
+      callable_value = -> { "callable value" }
+      value_class = Class.new do
+        include Strict::Value
+
+        def self.coerce_count(value) = value.to_i
+        def self.stringify(value) = value.to_s
+
+        attributes do
+          strict_attribute :if, String
+          active? Boolean()
+          count Integer, coerce: true
+          symbol_coerced String, coerce: :stringify
+          callable_coerced Integer, coerce: ->(value) { value.to_i }
+          static_default String, default: "static"
+          generated_default Integer, default: -> { # rubocop:disable Style/Lambda
+            generated_default += 1
+            1
+          }
+          callable_value Anything(), default_value: callable_value
+          explicit_generator String, default_generator: -> { "generated" }
+        end
+      end
+      attributes = {
+        if: "yes",
+        active?: true,
+        count: "1",
+        symbol_coerced: 2,
+        callable_coerced: "3"
+      }
+      value = value_class.new(**attributes)
+      equal_value = value_class.new(**attributes)
+
+      expect(value.to_h).to eq(
+        **attributes,
+        count: 1,
+        symbol_coerced: "2",
+        callable_coerced: 3,
+        static_default: "static",
+        generated_default: 1,
+        callable_value: callable_value,
+        explicit_generator: "generated"
+      )
+      expect(value.public_send(:if)).to eq("yes")
+      expect(value.active?).to be(true)
+      expect(value).to eq(equal_value)
+      expect(value).to eql(equal_value)
+      expect(value.hash).to eq(equal_value.hash)
+      expect(value.with(count: 4).count).to eq(4)
+
+      descriptors = value_class.strict_attributes.to_a
+      expect(descriptors.map(&:name)).to eq(
+        %i[if active? count symbol_coerced callable_coerced static_default generated_default callable_value
+           explicit_generator]
+      )
+      expect(descriptors.first.validator === "a string").to be(true)
+      expect(descriptors.first.optional?).to be(false)
+      expect(descriptors.last.optional?).to be(true)
+
+      expect(value_class.coercer.call(nil)).to be_nil
+      expect(value_class.coercer.call("unchanged")).to eq("unchanged")
+      coerced = value_class.coercer.call(attributes.transform_keys(&:to_s))
+      expect(coerced).to eq(value)
+
+      child_class = Class.new(value_class)
+      child_value = child_class.new(**attributes)
+      equal_child_value = child_class.new(**attributes)
+      expect(child_value).to eq(equal_child_value)
+    end
+  end
+
+  describe "objects" do
+    it "supports validated punctuation writers and retains identity equality" do
+      object_class = Class.new do
+        include Strict::Object
+
+        attributes do
+          active? Boolean()
+          dangerous! Boolean()
+        end
+      end
+      object = object_class.new(active?: true, dangerous!: false)
+      other = object_class.new(active?: true, dangerous!: false)
+
+      object.public_send(:"active?=", false)
+      object.public_send(:"dangerous!=", true)
+
+      expect(object.to_h).to eq(active?: false, dangerous!: true)
+      expect(object).not_to eq(other)
+      expect(object).not_to respond_to(:with)
+      expect do
+        object.public_send(:"active?=", "no")
+      end.to raise_error(Strict::AssignmentError) { |error| expect(error.value).to eq("no") }
+    end
+  end
+
+  describe "validators and coercers" do
+    it "provides the supported constructors inside attribute declarations" do
+      custom_validator = Object.new
+      custom_validator.define_singleton_method(:===) { |value| value == :custom }
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          all AllOf(Integer, 1..10)
+          any AnyOf(String, nil)
+          anything Anything()
+          array ArrayOf(Integer)
+          boolean Boolean()
+          hash HashOf(Symbol => Integer)
+          range RangeOf(Integer)
+          custom custom_validator
+          coerced_array ArrayOf(String), coerce: ToArray(with: ->(value) { value.to_s })
+          coerced_hash HashOf(String => String), coerce: ToHash(
+            with_keys: ->(value) { value.to_s },
+            with_values: ->(value) { value.to_s }
+          )
+        end
+      end
+      value = value_class.new(
+        all: 5,
+        any: nil,
+        anything: Object.new,
+        array: [1, 2],
+        boolean: false,
+        hash: { one: 1 },
+        range: 1..3,
+        custom: :custom,
+        coerced_array: [1, 2],
+        coerced_hash: { one: 1 }
+      )
+
+      expect(value.coerced_array).to eq(%w[1 2])
+      expect(value.coerced_hash).to eq("one" => "1")
+      expect do
+        value_class.new(
+          all: 11,
+          any: nil,
+          anything: nil,
+          array: [],
+          boolean: true,
+          hash: {},
+          range: 1..3,
+          custom: :custom,
+          coerced_array: [],
+          coerced_hash: {}
+        )
+      end.to raise_error(Strict::InitializationError)
+    end
+  end
+
+  describe "signed methods" do
+    it "supports parameter forms, coercion, defaults, blocks, and singleton methods" do
+      method_class = Class.new do
+        include Strict::Method
+
+        sig do
+          first Integer, coerce: ->(value) { value.to_i }
+          rest Array
+          factor Integer, default: 2
+          options Hash
+          returns Array
+        end
+        def call(first, *rest, factor:, **options, &block)
+          [first, rest, factor, options, block.call]
+        end
+
+        sig do
+          strict_parameter :if, String
+          returns String
+        end
+        singleton_class.class_eval("def reserved(if:); binding.local_variable_get(:if); end", __FILE__, __LINE__)
+      end
+
+      expect(method_class.new.call("1", 2, 3, extra: true) { :block }).to eq(
+        [1, [2, 3], 2, { extra: true }, :block]
+      )
+      expect(method_class.reserved(if: "yes")).to eq("yes")
+    end
+
+    it "keeps inherited signed methods validated and treats unsigned overrides normally" do
+      parent_class = Class.new do
+        include Strict::Method
+
+        sig do
+          value Integer
+          returns Integer
+        end
+        def call(value) = value
+      end
+      inherited_class = Class.new(parent_class)
+      overridden_class = Class.new(parent_class) { def call(value) = value }
+
+      expect(inherited_class.new.call(1)).to eq(1)
+      expect { inherited_class.new.call("1") }.to raise_error(Strict::MethodCallError)
+      expect(overridden_class.new.call("1")).to eq("1")
+    end
+  end
+
+  describe "interfaces" do
+    it "checks implementations, forwards reserved keywords, and exposes coercion and implementation" do
+      interface_class = Class.new do
+        include Strict::Interface
+
+        expose(:call) do
+          strict_parameter :if, String
+          returns String
+        end
+      end
+      implementation = Class.new do
+        class_eval("def call(if:); binding.local_variable_get(:if); end", __FILE__, __LINE__)
+      end.new
+      interface = interface_class.new(implementation)
+
+      expect(interface.implementation).to be(implementation)
+      expect(interface.call(if: "yes")).to eq("yes")
+      expect(interface_class.coercer.call(nil)).to be_nil
+      expect(interface_class.coercer.call(interface)).to be(interface)
+      expect(interface_class.coercer.call(implementation).implementation).to be(implementation)
+
+      receiver = Object.new
+      expect do
+        interface_class.new(receiver)
+      end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
+        expect(error.interface).to be(interface_class)
+        expect(error.receiver).to be(receiver)
+        expect(error.missing_methods).to eq([:call])
+        expect(error.invalid_method_definitions).to be_empty
+      }
+    end
+  end
+
+  describe "configuration" do
+    it "supports nested thread-local overrides and restores them after errors" do
+      original_sample_rate = described_class.configuration.sample_rate
+      thread_sample_rate = Queue.new
+
+      expect do
+        described_class.with_overrides(sample_rate: 0) do
+          expect(described_class.configuration.sample_rate).to eq(0)
+          described_class.with_overrides(sample_rate: 0.5) do
+            expect(described_class.configuration.sample_rate).to eq(0.5)
+          end
+          expect(described_class.configuration.sample_rate).to eq(0)
+
+          Thread.new { thread_sample_rate << described_class.configuration.sample_rate }.join
+          raise "restore the override"
+        end
+      end.to raise_error(RuntimeError, "restore the override")
+
+      expect(thread_sample_rate.pop).to eq(original_sample_rate)
+      expect(described_class.configuration.sample_rate).to eq(original_sample_rate)
+    end
+
+    it "runs coercion while sampling validator calls out" do
+      validator_calls = 0
+      coercer_calls = 0
+      validator = Object.new
+      validator.define_singleton_method(:===) do |_value|
+        validator_calls += 1
+        false
+      end
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          value validator, coerce: ->(value) { # rubocop:disable Style/Lambda
+            coercer_calls += 1
+            value.to_s
+          }
+        end
+      end
+
+      described_class.with_overrides(sample_rate: 0) { value_class.new(value: 1) }
+
+      expect(coercer_calls).to eq(1)
+      expect(validator_calls).to eq(0)
+    end
+  end
+
+  describe "exceptions" do
+    it "exposes caller-level initialization readers" do
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          one Integer
+          two String
+        end
+      end
+
+      expect do
+        value_class.new(one: 1, extra: true)
+      end.to raise_error(Strict::InitializationError) { |error|
+        expect(error).to be_a(Strict::Error)
+        expect(error.remaining_attributes.to_a).to eq([:extra])
+        expect(error.missing_attributes).to eq([:two])
+      }
+    end
+
+    it "exposes caller-level method call and definition readers" do
+      method_class = Class.new do
+        include Strict::Method
+
+        sig do
+          one Integer
+          two String
+        end
+        def call(one, two:); end
+      end
+
+      expect do
+        method_class.new.call(:invalid, :extra, unknown: true)
+      end.to raise_error(Strict::MethodCallError) { |error|
+        expect(error.remaining_args).to eq([:extra])
+        expect(error.remaining_kwargs).to eq(unknown: true)
+        expect(error.missing_parameters).to eq([:two])
+      }
+
+      expect do
+        Class.new do
+          include Strict::Method
+
+          sig { one Integer }
+          def call(two); end
+        end
+      end.to raise_error(Strict::MethodDefinitionError) { |error|
+        expect(error.missing_parameters.to_a).to eq([:one])
+        expect(error.additional_parameters.to_a).to eq([:two])
+      }
+    end
+
+    it "exposes the invalid return value" do
+      method_class = Class.new do
+        include Strict::Method
+
+        sig { returns String }
+        def call = 1
+      end
+
+      expect do
+        method_class.new.call
+      end.to raise_error(Strict::MethodReturnError) { |error| expect(error.value).to eq(1) }
+    end
+  end
+end
