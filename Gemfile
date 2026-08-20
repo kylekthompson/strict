@@ -7,11 +7,12 @@ gemspec
 
 group :development do
   gem "debug", "~> 1.11"
+  gem "factory_bot", "~> 6.5"
   gem "gem-release", "~> 2.2"
-  gem "minitest", "~> 6.0"
-  gem "minitest-spec-context", "~> 0.0.5"
   gem "rake", "~> 13.4"
+  gem "rspec", "~> 3.13"
   gem "rubocop", "~> 1.89"
-  gem "rubocop-minitest", "~> 0.40"
+  gem "rubocop-factory_bot", "~> 2.28"
   gem "rubocop-rake", "~> 0.7"
+  gem "rubocop-rspec", "~> 3.10"
 end

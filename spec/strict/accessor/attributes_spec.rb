@@ -1,0 +1,133 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+
+RSpec.describe Strict::Accessor::Attributes do
+  it "exposes the configuration on the class" do
+    expect(AccessorClass.strict_attributes).to be_an_instance_of(Strict::Attributes::Configuration)
+    expect(AccessorClass.strict_attributes.map(&:name)).to eq(%i[foo bar baz])
+  end
+
+  it "exposes writer methods" do
+    instance = build(:accessor)
+    instance.foo = 2
+
+    expect(instance.foo).to eq(2)
+  end
+
+  it "exposes reader methods" do
+    instance = build(:accessor)
+
+    expect(instance.foo).to eq(1)
+  end
+
+  it "does not allow invalid arguments at initialization" do
+    error = nil
+    expect do
+      AccessorClass.new(foo: "1", bar: "2", baz: "3")
+    end.to raise_error(Strict::InitializationError) { |raised_error| error = raised_error }
+
+    expect(error.message).to include("foo")
+  end
+
+  it "coerces arguments that can be coerced at initialization" do
+    instance = build(:accessor, bar: 2)
+
+    expect(instance.bar).to eq("2")
+  end
+
+  it "does not require optional attributes at initialization" do
+    instance = AccessorClass.new(foo: 1, bar: "2")
+
+    expect(instance.baz).to eq("some string")
+  end
+
+  it "requires mandatory attributes at initialization" do
+    error = nil
+    expect do
+      AccessorClass.new(foo: 1, baz: "3")
+    end.to raise_error(Strict::InitializationError) { |raised_error| error = raised_error }
+
+    expect(error.message).to include("bar")
+  end
+
+  it "does not allow additional attributes at initialization" do
+    error = nil
+    expect do
+      AccessorClass.new(foo: 1, bar: "2", baz: "3", bat: "uh oh")
+    end.to raise_error(Strict::InitializationError) { |raised_error| error = raised_error }
+
+    expect(error.message).to include("bat")
+  end
+
+  it "aggregates errors at initialization" do
+    error = nil
+    expect do
+      AccessorClass.new(foo: "1", baz: "3", bat: "uh oh")
+    end.to raise_error(Strict::InitializationError) { |raised_error| error = raised_error }
+
+    expect(error.message).to include("foo")
+    expect(error.message).to include("bar")
+    expect(error.message).to include("bat")
+  end
+
+  it "does not allow invalid arguments at assignment" do
+    instance = build(:accessor)
+
+    error = nil
+    expect do
+      instance.foo = "1"
+    end.to raise_error(Strict::AssignmentError) { |raised_error| error = raised_error }
+
+    expect(error.message).to include("foo")
+  end
+
+  it "coerces arguments that can be coerced at assignment" do
+    instance = build(:accessor)
+    instance.bar = 3
+
+    expect(instance.bar).to eq("3")
+  end
+
+  it "turns into a hash of attributes" do
+    instance = build(:accessor)
+
+    expect(instance.to_h).to eq(foo: 1, bar: "2", baz: "3")
+  end
+
+  it "can be inspected" do
+    instance = build(:accessor)
+
+    expect(instance.inspect).to eq("#<AccessorClass foo=1 bar=\"2\" baz=\"3\">")
+  end
+
+  it "can be pretty printed" do
+    instance = build(:accessor)
+    output = StringIO.new
+    PP.pp(instance, output, 5)
+
+    expect(output.string).to eq(<<~OUTPUT)
+      #<AccessorClass
+       foo=1
+       bar="2"
+       baz="3">
+    OUTPUT
+  end
+
+  it "exposes a coercer" do
+    instance = AccessorClass.coercer.call(foo: 1, bar: "2", baz: "3")
+
+    expect(instance).to be_an_instance_of(AccessorClass)
+    expect(instance.foo).to eq(1)
+    expect(instance.bar).to eq("2")
+    expect(instance.baz).to eq("3")
+
+    instance = AccessorClass.coercer.call("1")
+
+    expect(instance).to eq("1")
+
+    expect do
+      AccessorClass.coercer.call({})
+    end.to raise_error(Strict::InitializationError)
+  end
+end
