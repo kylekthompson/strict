@@ -36,8 +36,58 @@ RSpec.describe Strict::Attributes::GeneratedMethods do
     end
   end
 
+  it "allows generated readers to override inherited methods" do
+    parent_class = Class.new do
+      def tag(*) = "inherited tag"
+
+      def theme = "inherited theme"
+      protected :theme
+    end
+    value_class = Class.new(parent_class) do
+      include Strict::Value
+
+      attributes do
+        tag AnyOf("h1", "h2")
+        theme String
+        strict_attribute :format, String
+        strict_attribute :system, String
+        strict_attribute :fork, String
+      end
+    end
+    value = value_class.new(tag: "h1", theme: "dark", format: "short", system: "metric", fork: "main")
+
+    expect(value.to_h).to eq(tag: "h1", theme: "dark", format: "short", system: "metric", fork: "main")
+    expect(value).to respond_to(:theme, :format, :system, :fork)
+    expect do
+      value_class.new(tag: "div", theme: "dark", format: "short", system: "metric", fork: "main")
+    end.to raise_error(Strict::InitializationError)
+  end
+
+  it "allows generated accessors to override inherited methods" do
+    parent_class = Class.new do
+      attr_accessor :status
+      private :status=
+    end
+    object_class = Class.new(parent_class) do
+      include Strict::Object
+
+      attributes { status String }
+    end
+    object = object_class.new(status: "pending")
+
+    object.status = "complete"
+
+    expect(object.status).to eq("complete")
+    expect do
+      object.status = :invalid
+    end.to raise_error(Strict::AssignmentError)
+  end
+
   it "rejects generated readers that collide with existing or Strict methods" do
-    %i[class to_h pretty_print inspect hash eql? initialize public_send].each do |name|
+    %i[
+      __send__ class deconstruct_keys eql? hash initialize instance_variable_set inspect method_missing pretty_print
+      public_send raise to_h with
+    ].each do |name|
       expect do
         Class.new do
           include Strict::Value

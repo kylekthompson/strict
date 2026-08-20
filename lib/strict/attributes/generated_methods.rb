@@ -4,7 +4,8 @@ module Strict
   module Attributes
     class GeneratedMethods < ::Module
       DECLARATION_MARKER = :@__strict_attributes_declared
-      private_constant :DECLARATION_MARKER
+      RESERVED_METHODS = %i[class eql? hash instance_variable_set public_send raise].freeze
+      private_constant :DECLARATION_MARKER, :RESERVED_METHODS
 
       class << self
         def install_on(target, writable:)
@@ -54,21 +55,29 @@ module Strict
 
       def validate_collisions!(target, attributes, writable:)
         attributes.each do |attribute|
-          validate_method_available!(target, attribute.name)
-          validate_method_available!(target, :"#{attribute.name}=") if writable
+          validate_method_available!(target, attribute.name, writable: writable)
+          validate_method_available!(target, :"#{attribute.name}=", writable: writable) if writable
         end
       end
 
-      def validate_method_available!(target, name)
-        return unless method_defined?(target, name) || method_defined?(Strict::Attributes::Instance, name)
+      def validate_method_available!(target, name, writable:)
+        return unless method_reserved?(target, name, writable: writable)
 
         raise ArgumentError, "Generated attribute method #{name.inspect} already exists for #{target}"
       end
 
-      def method_defined?(owner, name)
-        owner.public_method_defined?(name) ||
-          owner.protected_method_defined?(name) ||
-          owner.private_method_defined?(name)
+      def method_reserved?(target, name, writable:)
+        method_defined_directly?(target, name) ||
+          method_defined_directly?(Strict::Attributes::Instance, name) ||
+          (!writable && method_defined_directly?(Strict::Value, name)) ||
+          method_defined_directly?(BasicObject, name) ||
+          RESERVED_METHODS.include?(name)
+      end
+
+      def method_defined_directly?(owner, name)
+        owner.public_method_defined?(name, false) ||
+          owner.protected_method_defined?(name, false) ||
+          owner.private_method_defined?(name, false)
       end
 
       def define_reader(attribute)
