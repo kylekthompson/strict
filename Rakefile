@@ -14,4 +14,9 @@ task :rbs do
   sh "bundle exec rbs -I sig validate"
 end
 
+desc "Run timing and allocation baselines"
+task :benchmark do
+  sh "bundle exec ruby benchmark/baseline.rb"
+end
+
 task default: %i[spec rubocop rbs]
