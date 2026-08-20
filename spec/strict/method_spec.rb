@@ -5,7 +5,7 @@ require "spec_helper"
 RSpec.describe Strict::Method do
   it "supports a mix of positional and keyword parameters" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer
@@ -19,7 +19,7 @@ RSpec.describe Strict::Method do
 
   it "supports rest parameters" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer
@@ -38,7 +38,7 @@ RSpec.describe Strict::Method do
 
   it "does not validate blocks, but passes them through" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer
@@ -55,7 +55,7 @@ RSpec.describe Strict::Method do
 
   it "coerces arguments" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer, coerce: ->(value) { value.to_i }
@@ -71,7 +71,7 @@ RSpec.describe Strict::Method do
 
   it "does not require optional parameters" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer, default: 1
@@ -87,7 +87,7 @@ RSpec.describe Strict::Method do
 
   it "ignores the defaults on the method itself when the sig has one" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer, default: 1
@@ -103,7 +103,7 @@ RSpec.describe Strict::Method do
 
   it "invalidates postitional parameters" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer
@@ -130,7 +130,7 @@ RSpec.describe Strict::Method do
 
   it "invalidates keyword parameters" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Integer
@@ -157,7 +157,7 @@ RSpec.describe Strict::Method do
 
   it "invalidates return values" do
     instance = Class.new do
-      extend Strict::Method
+      include Strict::Method
 
       sig do
         one Anything()
@@ -178,7 +178,7 @@ RSpec.describe Strict::Method do
   it "ensures sigs align with methods" do
     expect do
       Class.new do
-        extend Strict::Method
+        include Strict::Method
 
         sig do
           one Anything()
@@ -191,7 +191,7 @@ RSpec.describe Strict::Method do
 
     expect do
       Class.new do
-        extend Strict::Method
+        include Strict::Method
 
         sig do
           one Anything()
@@ -207,7 +207,7 @@ RSpec.describe Strict::Method do
   describe "instance methods" do
     it "only strictly validates methods declared with a sig" do
       klass = Class.new do
-        extend Strict::Method
+        include Strict::Method
 
         def sigless(baz, bat)
           baz + bat
@@ -237,7 +237,7 @@ RSpec.describe Strict::Method do
   describe "self. class methods" do
     it "only strictly validates methods declared with a sig" do
       klass = Class.new do
-        extend Strict::Method
+        include Strict::Method
 
         def self.sigless(baz, bat)
           baz + bat
@@ -266,7 +266,7 @@ RSpec.describe Strict::Method do
   describe "class << self methods" do
     it "only strictly validates methods declared with a sig" do
       klass = Class.new do
-        extend Strict::Method
+        include Strict::Method
 
         class << self
           def sigless(baz, bat)
@@ -292,5 +292,19 @@ RSpec.describe Strict::Method do
       expect(klass.sigged(1, 2)).to eq(3)
       expect { klass.sigged("1", "2") }.to raise_error(Strict::MethodCallError)
     end
+  end
+
+  it "supports reserved parameter names through strict_parameter" do
+    instance = Class.new do
+      include Strict::Method
+
+      sig do
+        strict_parameter :if, String
+        returns String
+      end
+      class_eval("def call(if:); binding.local_variable_get(:if); end", __FILE__, __LINE__)
+    end.new
+
+    expect(instance.call(if: "yes")).to eq("yes")
   end
 end

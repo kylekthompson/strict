@@ -84,7 +84,7 @@ Stateful.new(some_state: "123") == Stateful.new(some_state: "123")
 
 ```rb
 class UpdateEmail
-  extend Strict::Method
+  include Strict::Method
 
   sig do
     user_id String, coerce: ->(value) { value.to_s }
@@ -114,7 +114,7 @@ UpdateEmail.new.call(user_id: "123", email: "456")
 
 ```rb
 class Storage
-  extend Strict::Interface
+  include Strict::Interface
 
   expose(:write) do
     key String
