@@ -52,7 +52,7 @@ module Strict
         )
         verifiable_method.verify_definition!
         strict_class_methods[method_name] = verifiable_method
-        singleton_class.prepend(Methods::Module.new(verifiable_method))
+        strict_method_wrapper(singleton_class).wrap(verifiable_method)
       end
 
       def method_added(method_name)
@@ -70,9 +70,22 @@ module Strict
         )
         verifiable_method.verify_definition!
         strict_instance_methods[method_name] = verifiable_method
-        prepend(Methods::Module.new(verifiable_method))
+        strict_method_wrapper(self).wrap(verifiable_method)
       end
       # rubocop:enable Metrics/MethodLength
+
+      private
+
+      def strict_method_wrapper(owner)
+        if owner.instance_variable_defined?(:@__strict_method_internal_wrapper)
+          owner.instance_variable_get(:@__strict_method_internal_wrapper)
+        else
+          Methods::Module.new.tap do |wrapper|
+            owner.instance_variable_set(:@__strict_method_internal_wrapper, wrapper)
+            owner.prepend(wrapper)
+          end
+        end
+      end
     end
   end
 end
