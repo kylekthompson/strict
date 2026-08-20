@@ -62,12 +62,20 @@ class PaymentResult
   discriminator :status
 
   variant :authorized do
-    authorization_id String
-    amount_in_cents Integer
+    attributes do
+      authorization_id String
+      amount_in_cents Integer
+    end
+
+    def successful? = true
   end
 
   variant :declined do
-    reason String
+    attributes do
+      reason String
+    end
+
+    def successful? = false
   end
 end
 
@@ -77,6 +85,9 @@ authorized = PaymentResult::Authorized.new(
 )
 authorized.to_h
 # => { status: :authorized, authorization_id: "auth_123", amount_in_cents: 1_000 }
+
+authorized.successful?
+# => true
 
 result = PaymentResult.coercer.call(
   "status" => "declined",

@@ -82,19 +82,27 @@ class PaymentResult
   discriminator :status
 
   variant :authorized do
-    authorization_id String
-    amount_in_cents Integer
+    attributes do
+      authorization_id String
+      amount_in_cents Integer
+    end
+
+    def successful? = true
   end
 
   variant :declined do
-    reason String
+    attributes do
+      reason String
+    end
+
+    def successful? = false
   end
 end
 ```
 
 There is no default discriminator. A variant name must be a lower snake-case string or symbol. Its canonical tag is the corresponding symbol, and Strict generates a PascalCase nested subclass. For example, `variant :requires_action` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `:requires_action`.
 
-Each generated variant includes `Strict::Value`. Its declaration block uses the attribute DSL, and its implicit first attribute is the discriminator with a fixed default value:
+The variant block configures the generated subclass. It can include modules, define methods, and contain zero or one `attributes` block. Strict combines that block with an implicit first attribute containing the discriminator's fixed default value:
 
 ```ruby
 PaymentResult::Authorized.new(
@@ -124,7 +132,7 @@ payment_result PaymentResult
 coerced_payment_result PaymentResult, coerce: PaymentResult.coercer
 ```
 
-Declaring a discriminator more than once, declaring a duplicate tag, using an invalid variant name, or replacing an existing generated constant raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
+Declaring a discriminator more than once, declaring a duplicate tag, using an invalid variant name, replacing an existing generated constant, declaring multiple attribute blocks, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
 
 ### Signed methods
 

@@ -52,23 +52,41 @@ module Strict
           raise(ArgumentError, "declare a discriminator before variants for #{self}")
       end
 
-      # rubocop:disable Metrics/MethodLength
       def strict_union_build_variant(discriminator, tag, definition)
         variant_class = Class.new(self)
+        attribute_definition = strict_union_evaluate_variant(variant_class, tag, definition)
         variant_class.include(Strict::Value)
+        strict_union_define_variant_attributes(variant_class, discriminator, tag, attribute_definition)
+        variant_class.define_singleton_method(:===, ::Module.instance_method(:===))
+        variant_class
+      end
+
+      def strict_union_evaluate_variant(variant_class, tag, definition)
+        return unless definition
+
+        attribute_definition = nil
+        variant_class.define_singleton_method(:attributes) do |&block|
+          raise ArgumentError, "attributes already declared for variant #{tag.inspect}" if attribute_definition
+
+          attribute_definition = block || -> {}
+          nil
+        end
+        variant_class.class_exec(&definition)
+        variant_class.singleton_class.remove_method(:attributes)
+        attribute_definition
+      end
+
+      def strict_union_define_variant_attributes(variant_class, discriminator, tag, attribute_definition)
         discriminator_coercer = strict_union_discriminator_coercer(discriminator, tag)
         variant_class.attributes do
           strict_attribute discriminator, tag, default_value: tag, coerce: discriminator_coercer
           discriminator_attribute = __strict_dsl_internal_attributes.fetch(discriminator)
-          instance_exec(&definition)
+          instance_exec(&attribute_definition) if attribute_definition
           unless __strict_dsl_internal_attributes.fetch(discriminator).equal?(discriminator_attribute)
             ::Kernel.raise ::ArgumentError, "variants cannot redeclare discriminator #{discriminator.inspect}"
           end
         end
-        variant_class.define_singleton_method(:===, ::Module.instance_method(:===))
-        variant_class
       end
-      # rubocop:enable Metrics/MethodLength
 
       def strict_union_discriminator_coercer(discriminator, tag)
         lambda do |value|

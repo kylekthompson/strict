@@ -10,12 +10,16 @@ RSpec.describe Strict::Union do
       discriminator :status
 
       variant :authorized do
-        authorization_id String
-        amount_in_cents Integer
+        attributes do
+          authorization_id String
+          amount_in_cents Integer
+        end
       end
 
       variant :declined do
-        reason String
+        attributes do
+          reason String
+        end
       end
     end
   end
@@ -34,6 +38,31 @@ RSpec.describe Strict::Union do
     expect(authorized.with(amount_in_cents: 2_000).amount_in_cents).to eq(2_000)
     expect(union_class === authorized).to be(true)
     expect(union_class === declined).to be(true)
+  end
+
+  it "defines behavior on generated variant classes" do
+    behavior = Module.new do
+      def successful? = true
+    end
+    result_class = Class.new do
+      include Strict::Union
+
+      discriminator :status
+
+      variant :authorized do
+        include behavior
+
+        attributes do
+          authorization_id String
+        end
+
+        def description = "Authorized as #{authorization_id}"
+      end
+    end
+    authorized = result_class::Authorized.new(authorization_id: "auth_123")
+
+    expect(authorized.successful?).to be(true)
+    expect(authorized.description).to eq("Authorized as auth_123")
   end
 
   it "dispatches symbol- and string-keyed hashes by symbol or string tags" do
@@ -145,6 +174,20 @@ RSpec.describe Strict::Union do
     expect(generated_union::RequiresAction.new.to_h).to eq(kind: :requires_action)
   end
 
+  it "rejects multiple attribute declarations for one variant" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        variant :invalid do
+          attributes { first String }
+          attributes { second String }
+        end
+      end
+    end.to raise_error(ArgumentError, /attributes already declared for variant :invalid/)
+  end
+
   it "rejects duplicate declarations and generated constant collisions" do
     duplicate_discriminator = Class.new do
       include Strict::Union
@@ -185,7 +228,9 @@ RSpec.describe Strict::Union do
 
         discriminator :kind
         variant :invalid do
-          kind Symbol
+          attributes do
+            kind Symbol
+          end
         end
       end
     end.to raise_error(ArgumentError, /cannot redeclare discriminator :kind/)
