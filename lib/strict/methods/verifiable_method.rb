@@ -6,20 +6,17 @@ module Strict
       class << self
         def from_method(method:, configuration:, instance:)
           new(
-            owner: method.owner,
-            name: method.name,
-            invocation_parameters: method.parameters,
+            method: method,
             configuration: configuration,
             instance: instance
           )
         end
 
         def for_interface(owner:, name:, configuration:)
-          invocation_parameters = configuration.parameters.map { |parameter| [:keyreq, parameter.name] }
           new(
+            method: nil,
             owner: owner,
             name: name,
-            invocation_parameters: invocation_parameters,
             configuration: configuration,
             instance: true
           )
@@ -43,19 +40,22 @@ module Strict
         end
       end
 
-      attr_reader :name, :parameters, :returns
+      attr_reader :parameters, :returns
 
-      def initialize(owner:, name:, invocation_parameters:, configuration:, instance:)
-        @owner = owner
-        @name = name
+      def initialize(method:, configuration:, instance:, owner: nil, name: nil)
+        @method = method
         @parameters = configuration.parameters
+        @parameters_index = parameters.to_h { |parameter| [parameter.name, parameter] }
         @returns = configuration.returns
         @instance = instance
-        compile_invocation(invocation_parameters)
+        compile_invocation(invocation_parameters_for(method))
+        return if method
+
+        @owner = owner
+        @name = name
       end
 
       def compile_invocation(invocation_parameters)
-        @parameters_index = parameters.to_h { |parameter| [parameter.name, parameter] }
         @parameter_bindings = compile_parameter_bindings(invocation_parameters)
         @keyword_parameter_names = parameter_bindings.filter_map do |binding|
           binding.name if binding.kind == :keyword
@@ -63,6 +63,10 @@ module Strict
         @accepts_keyrest = parameter_bindings.any? { |binding| binding.kind == :keyrest }
       end
       private :compile_invocation
+
+      def name
+        method ? method.name : @name
+      end
 
       def to_s
         "#{owner}#{separator}#{name}"
@@ -210,7 +214,17 @@ module Strict
       NOT_PROVIDED = ::Object.new.freeze
       private_constant :NOT_PROVIDED
 
-      attr_reader :owner, :parameters_index, :parameter_bindings, :keyword_parameter_names
+      attr_reader :method, :parameters_index, :parameter_bindings, :keyword_parameter_names
+
+      def owner
+        method ? method.owner : @owner
+      end
+
+      def invocation_parameters_for(method)
+        return method.parameters if method
+
+        parameters.map { |parameter| [:keyreq, parameter.name] }
+      end
 
       # rubocop:disable Metrics/MethodLength
       def compile_parameter_bindings(invocation_parameters)
