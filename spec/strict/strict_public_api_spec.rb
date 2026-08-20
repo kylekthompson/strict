@@ -88,6 +88,21 @@ RSpec.describe Strict do
       equal_child_value = child_class.new(**attributes)
       expect(child_value).to eq(equal_child_value)
     end
+
+    it "derives hashes, equality, and hash codes from declared readers" do
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes { amount Integer }
+      end
+      value_with_overridden_reader = value_class.new(amount: 1)
+      equal_value = value_class.new(amount: 2)
+      value_with_overridden_reader.define_singleton_method(:amount) { 2 }
+
+      expect(value_with_overridden_reader.to_h).to eq(amount: 2)
+      expect(value_with_overridden_reader).to eql(equal_value)
+      expect(value_with_overridden_reader.hash).to eq(equal_value.hash)
+    end
   end
 
   describe "objects" do
@@ -402,6 +417,38 @@ RSpec.describe Strict do
 
       expect(coercer_calls).to eq(1)
       expect(validator_calls).to eq(0)
+    end
+
+    it "samples each attribute independently while retaining coercion and defaults" do
+      validations = []
+      validator = lambda do |name|
+        Object.new.tap do |value|
+          value.define_singleton_method(:===) do |_argument|
+            validations << name
+            true
+          end
+        end
+      end
+      random_values = [0.25, 0.75, 0.25]
+      random = Object.new.extend(Random::Formatter)
+      random.define_singleton_method(:rand) { random_values.shift }
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          first validator.call(:first)
+          second validator.call(:second), coerce: ->(value) { value.to_s }
+          third validator.call(:third), default: "default"
+        end
+      end
+
+      value = described_class.with_overrides(random: random, sample_rate: 0.5) do
+        value_class.new(first: 1, second: 2)
+      end
+
+      expect(value.to_h).to eq(first: 1, second: "2", third: "default")
+      expect(validations).to eq(%i[first third])
+      expect(random_values).to be_empty
     end
   end
 
