@@ -295,18 +295,18 @@ RSpec.describe Strict do
       interface_class = Class.new do
         include Strict::Interface
 
-        expose(:call) do
+        expose(:if) do
           strict_parameter :if, String
           returns String
         end
       end
       implementation = Class.new do
-        class_eval("def call(if:); binding.local_variable_get(:if); end", __FILE__, __LINE__)
+        class_eval("def if(if:); binding.local_variable_get(:if); end", __FILE__, __LINE__)
       end.new
       interface = interface_class.new(implementation)
 
       expect(interface.implementation).to be(implementation)
-      expect(interface.call(if: "yes")).to eq("yes")
+      expect(interface.public_send(:if, if: "yes")).to eq("yes")
       expect(interface_class.coercer.call(nil)).to be_nil
       expect(interface_class.coercer.call(interface)).to be(interface)
       expect(interface_class.coercer.call(implementation).implementation).to be(implementation)
@@ -317,7 +317,7 @@ RSpec.describe Strict do
       end.to raise_error(Strict::ImplementationDoesNotConformError) { |error|
         expect(error.interface).to be(interface_class)
         expect(error.receiver).to be(receiver)
-        expect(error.missing_methods).to eq([:call])
+        expect(error.missing_methods).to eq([:if])
         expect(error.invalid_method_definitions).to be_empty
       }
     end
