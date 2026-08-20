@@ -11,12 +11,21 @@ module Strict
     end
 
     def eql?(other)
-      self.class.equal?(other.class) && to_h.eql?(other.to_h)
+      return false unless self.class.equal?(other.class)
+
+      self.class.strict_attributes.all? do |attribute|
+        public_send(attribute.name).eql?(other.public_send(attribute.name))
+      end
     end
     alias == eql?
 
     def hash
-      [self.class, to_h].hash
+      value_class = self.class
+      components = [value_class]
+      value_class.strict_attributes.each do |attribute|
+        components << public_send(attribute.name)
+      end
+      components.hash
     end
   end
 end

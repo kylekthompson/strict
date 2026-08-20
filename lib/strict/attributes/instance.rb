@@ -42,9 +42,11 @@ module Strict
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
       def to_h
-        self.class.strict_attributes.to_h do |attribute|
-          [attribute.name, public_send(attribute.name)]
+        values = {}
+        self.class.strict_attributes.each do |attribute|
+          values[attribute.name] = public_send(attribute.name)
         end
+        values
       end
 
       def inspect
