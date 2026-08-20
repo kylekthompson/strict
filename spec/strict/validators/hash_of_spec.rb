@@ -28,6 +28,18 @@ RSpec.describe Strict::Validators::HashOf do
     end
   end
 
+  describe "#coercer" do
+    it "coerces hash-like values, keys, and entry values" do
+      key_validator = Object.new
+      key_validator.define_singleton_method(:coercer) { ->(key) { key.to_sym } }
+      value_validator = Object.new
+      value_validator.define_singleton_method(:coercer) { ->(value) { value.to_s } }
+      hash_of = described_class.new(key_validator, value_validator)
+
+      expect(hash_of.coercer.call([["one", 1]])).to eq(one: "1")
+    end
+  end
+
   describe "#to_s" do
     it "is meaningful" do
       hash_of = described_class.new("2", "3")

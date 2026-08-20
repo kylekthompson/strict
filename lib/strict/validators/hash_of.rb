@@ -12,6 +12,12 @@ module Strict
         @value_validator = value_validator
       end
 
+      def coercer
+        key_coercer = key_validator.coercer if key_validator.respond_to?(:coercer)
+        value_coercer = value_validator.coercer if value_validator.respond_to?(:coercer)
+        Coercers::Hash.new(key_coercer, value_coercer)
+      end
+
       # rubocop:disable Metrics/MethodLength
       def violations(value)
         return Validation.invalid(self, value) unless Hash === value

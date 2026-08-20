@@ -266,6 +266,10 @@ They also provide these coercer constructors:
 - `ToArray(with: nil)`
 - `ToHash(with_keys: nil, with_values: nil)`
 
+`ArrayOf` provides a coercer with the same array-like conversion as `ToArray` and uses its element validator's coercer when available. `HashOf` provides the corresponding `ToHash` behavior and uses its key and value validators' coercers when available. This coercion composes recursively, such as for `ArrayOf(ValueClass)` or `HashOf(String => ArrayOf(ValueClass))`.
+
+The other built-in validators do not provide coercers. Their conversions have no single safe default: logical validators cannot unambiguously select or order coercers, ranges have no supported conversion contract, and booleans have no canonical input conversion.
+
 The constructors' validation and conversion results are public. Their concrete `Strict::Validators::*` and `Strict::Coercers::*` classes, metadata readers, and exact string representations are not public API.
 
 ## Configuration

@@ -294,6 +294,33 @@ RSpec.describe Strict do
         )
       end.to raise_error(Strict::InitializationError)
     end
+
+    it "propagates coercion through array and hash validators" do
+      item_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          name String
+        end
+      end
+      collection_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          items ArrayOf(item_class)
+          items_by_group HashOf(String => ArrayOf(item_class))
+        end
+      end
+
+      collection = collection_class.new(
+        items: [{ name: "one" }],
+        items_by_group: [["all", [{ name: "one" }]]]
+      )
+
+      item = item_class.new(name: "one")
+      expect(collection.items).to eq([item])
+      expect(collection.items_by_group).to eq("all" => [item])
+    end
   end
 
   describe "signed methods" do

@@ -23,6 +23,16 @@ RSpec.describe Strict::Validators::ArrayOf do
     end
   end
 
+  describe "#coercer" do
+    it "coerces array-like values and their elements" do
+      element_validator = Object.new
+      element_validator.define_singleton_method(:coercer) { ->(value) { value.to_s } }
+      array_of = described_class.new(element_validator)
+
+      expect(array_of.coercer.call(1..3)).to eq(%w[1 2 3])
+    end
+  end
+
   describe "#to_s" do
     it "is meaningful" do
       array_of = described_class.new("2")
