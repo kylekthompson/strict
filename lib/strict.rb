@@ -36,11 +36,11 @@ module Strict
     end
 
     def thread_configuration
-      Thread.current[:configuration]
+      Thread.current[:__strict_configuration_override]
     end
 
     def thread_configuration=(configuration)
-      Thread.current[:configuration] = configuration
+      Thread.current[:__strict_configuration_override] = configuration
     end
 
     def global_configuration
