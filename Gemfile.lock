@@ -129,6 +129,7 @@ DEPENDENCIES
   factory_bot (~> 6.5)
   gem-release (~> 2.2)
   rake (~> 13.4)
+  rbs (~> 4.1)
   rspec (~> 3.13)
   rubocop (~> 1.89)
   rubocop-factory_bot (~> 2.28)

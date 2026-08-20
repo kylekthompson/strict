@@ -1,4 +1,169 @@
 module Strict
   VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
+  interface _Validator
+    def ===: (untyped value) -> bool
+  end
+
+  interface _Coercer[A, B]
+    def call: (A value) -> B
+  end
+
+  interface _AttributeDescriptor
+    def name: () -> Symbol
+    def validator: () -> _Validator
+    def optional?: () -> bool
+  end
+
+  interface _AttributesInstance
+    def to_h: () -> Hash[Symbol, untyped]
+    def inspect: () -> String
+    def pretty_print: (untyped printer) -> untyped
+  end
+
+  interface _ValidationDsl
+    def AllOf: (*_Validator validators) -> _Validator
+    def AnyOf: (*_Validator validators) -> _Validator
+    def Anything: () -> _Validator
+    def ArrayOf: (_Validator element_validator) -> _Validator
+    def Boolean: () -> _Validator
+    def HashOf: (Hash[_Validator, _Validator] validators) -> _Validator
+    def RangeOf: (_Validator element_validator) -> _Validator
+  end
+
+  interface _CoercionDsl
+    def ToArray: (?with: _Coercer[untyped, untyped]?) -> _Coercer[untyped, Array[untyped]]
+    def ToHash: (?with_keys: _Coercer[untyped, untyped]?, ?with_values: _Coercer[untyped, untyped]?) -> _Coercer[untyped, Hash[untyped, untyped]]
+  end
+
+  type attribute_coercion = bool | Symbol | _Coercer[untyped, untyped]
+  type method_coercion = false | _Coercer[untyped, untyped]
+
+  interface _AttributesDsl
+    include _ValidationDsl
+    include _CoercionDsl
+
+    def strict_attribute: (
+      String | Symbol name,
+      ?_Validator validator,
+      ?coerce: attribute_coercion,
+      ?default: untyped,
+      ?default_value: untyped,
+      ?default_generator: ^() -> untyped
+    ) -> void
+
+    def method_missing: (Symbol name, *untyped arguments, **untyped keywords) -> void
+  end
+
+  interface _MethodDsl
+    include _ValidationDsl
+    include _CoercionDsl
+
+    def strict_parameter: (
+      String | Symbol name,
+      ?_Validator validator,
+      ?coerce: method_coercion,
+      ?default: untyped,
+      ?default_value: untyped,
+      ?default_generator: ^() -> untyped
+    ) -> void
+
+    def returns: (?_Validator validator) -> void
+    def method_missing: (Symbol name, *untyped arguments, **untyped keywords) -> void
+  end
+
+  # Extend this type-only interface in application signatures for classes that
+  # include Strict::Value or Strict::Object.
+  interface _AttributesClass
+    def attributes: () { () [self: _AttributesDsl] -> untyped } -> void
+    def strict_attributes: () -> Enumerable[_AttributeDescriptor]
+    def coercer: () -> _Coercer[untyped, untyped]
+  end
+
+  # Extend this type-only interface in application signatures for classes that
+  # include Strict::Method.
+  interface _MethodClass
+    def sig: () { () [self: _MethodDsl] -> untyped } -> void
+  end
+
+  # Extend this type-only interface in application signatures for classes that
+  # include Strict::Interface.
+  interface _InterfaceClass
+    include _MethodClass
+
+    def expose: (String | Symbol name) { () [self: _MethodDsl] -> untyped } -> void
+    def coercer: () -> _Coercer[untyped, untyped]
+  end
+
+  def self.configuration: () -> Configuration
+  def self.configure: () { (Configuration configuration) -> untyped } -> void
+  def self.with_overrides: (
+    ?random: Random::Formatter,
+    ?sample_rate: Numeric
+  ) { () -> untyped } -> void
+
+  module Value
+    include _AttributesInstance
+
+    def with: (**untyped attributes) -> self
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+  end
+
+  module Object
+    include _AttributesInstance
+  end
+
+  module Method
+  end
+
+  module Interface
+    def implementation: () -> untyped
+  end
+
+  class Configuration
+    attr_accessor random: Random::Formatter
+    attr_accessor sample_rate: Numeric
+  end
+
+  class Error < StandardError
+  end
+
+  class AssignmentError < Error
+    def value: () -> untyped
+  end
+
+  class InitializationError < Error
+    def remaining_attributes: () -> Set[Symbol]
+    def missing_attributes: () -> Array[Symbol]?
+  end
+
+  type invalid_method_definition = {
+    additional_parameters: Array[Symbol],
+    missing_parameters: Enumerable[Symbol],
+    non_keyword_parameters: Array[Symbol]
+  }
+
+  class ImplementationDoesNotConformError < Error
+    def interface: () -> Class
+    def receiver: () -> untyped
+    def missing_methods: () -> Array[Symbol]?
+    def invalid_method_definitions: () -> Hash[Symbol, invalid_method_definition]
+  end
+
+  class MethodCallError < Error
+    def remaining_args: () -> Array[untyped]
+    def remaining_kwargs: () -> Hash[Symbol, untyped]
+    def missing_parameters: () -> Array[Symbol]?
+  end
+
+  class MethodDefinitionError < Error
+    def missing_parameters: () -> Enumerable[Symbol]
+    def additional_parameters: () -> Enumerable[Symbol]
+  end
+
+  class MethodReturnError < Error
+    def value: () -> untyped
+  end
 end
