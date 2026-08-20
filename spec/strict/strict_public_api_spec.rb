@@ -124,22 +124,24 @@ RSpec.describe Strict do
   end
 
   describe "objects" do
-    it "supports validated punctuation writers and retains identity equality" do
+    it "supports validated reserved and punctuation writers and retains identity equality" do
       object_class = Class.new do
         include Strict::Object
 
         attributes do
+          strict_attribute :if, String
           active? Boolean()
           dangerous! Boolean()
         end
       end
-      object = object_class.new(active?: true, dangerous!: false)
-      other = object_class.new(active?: true, dangerous!: false)
+      object = object_class.new(if: "yes", active?: true, dangerous!: false)
+      other = object_class.new(if: "yes", active?: true, dangerous!: false)
 
+      object.public_send(:"if=", "still yes")
       object.public_send(:"active?=", false)
       object.public_send(:"dangerous!=", true)
 
-      expect(object.to_h).to eq(active?: false, dangerous!: true)
+      expect(object.to_h).to eq(if: "still yes", active?: false, dangerous!: true)
       expect(object).not_to eq(other)
       expect(object).not_to respond_to(:with)
       expect do
