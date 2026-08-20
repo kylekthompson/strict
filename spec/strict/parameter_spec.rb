@@ -89,6 +89,12 @@ RSpec.describe Strict::Parameter do
         described_class.make(:attr_name, default: 1, default_value: 1)
       end.to raise_error(ArgumentError)
     end
+
+    it "requires a supported parameter coercer" do
+      [nil, true, :coerce, 1, Object.new].each do |coercer|
+        expect { described_class.make(:attr_name, coerce: coercer) }.to raise_error(ArgumentError)
+      end
+    end
   end
 
   describe "#valid?" do
@@ -150,22 +156,6 @@ RSpec.describe Strict::Parameter do
       parameter = described_class.make(:attr_name, coerce: false)
 
       expect(parameter.coerce("value")).to eq("value")
-    end
-
-    it "does not support .coerce_attr_name coercion" do
-      parameter = described_class.make(:attr_name, coerce: true)
-
-      expect do
-        parameter.coerce("value")
-      end.to raise_error(NoMethodError)
-    end
-
-    it "does not support coercion methods is passed" do
-      parameter = described_class.make(:attr_name, coerce: :some_method)
-
-      expect do
-        parameter.coerce("value")
-      end.to raise_error(NoMethodError)
     end
 
     it "calls the callable if one is passed" do

@@ -235,6 +235,8 @@ UpdateEmail.new.call(user_id: "123", email: "456")
 # => Strict::MethodReturnError
 ```
 
+`returns` validates the exact value produced by the method. It never coerces or replaces that value, and a successful call returns the same object to the caller.
+
 ### `Strict::Interface`
 
 ```rb

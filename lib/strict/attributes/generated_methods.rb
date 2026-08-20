@@ -3,20 +3,47 @@
 module Strict
   module Attributes
     class GeneratedMethods < ::Module
-      def self.install_on(target, writable:)
-        target.define_singleton_method(:attributes) do |&block|
-          block ||= -> {}
-          inherited_attributes = respond_to?(:strict_attributes) ? strict_attributes : []
-          configuration = Strict::Attributes::Dsl.run(attributes: inherited_attributes, &block)
-          include Strict::Attributes::GeneratedMethods.new(configuration, writable: writable)
-          include Strict::Attributes::Instance
-          extend Strict::Attributes::Class
+      DECLARATION_MARKER = :@__strict_attributes_declared
+      private_constant :DECLARATION_MARKER
+
+      class << self
+        def install_on(target, writable:)
+          installation = ->(receiver, &definition) { install_attributes_on(receiver, writable, &definition) }
+          target.define_singleton_method(:attributes) do |&definition|
+            installation.call(self, &definition)
+          end
         end
+
+        private
+
+        # rubocop:disable Metrics/MethodLength
+        def install_attributes_on(target, writable, &definition)
+          if target.instance_variable_defined?(DECLARATION_MARKER)
+            raise ArgumentError, "Attributes are already declared for #{target}"
+          end
+
+          definition ||= -> {}
+          inherited_attributes = target.respond_to?(:strict_attributes) ? target.strict_attributes.to_a : []
+          configuration = Strict::Attributes::Dsl.run(attributes: inherited_attributes, &definition)
+          declared_attributes = configuration.attributes.drop(inherited_attributes.length)
+          generated_methods = new(
+            configuration,
+            writable: writable,
+            target: target,
+            declared_attributes: declared_attributes
+          )
+          target.instance_variable_set(DECLARATION_MARKER, true)
+          target.include(generated_methods)
+          target.include(Strict::Attributes::Instance)
+          target.extend(Strict::Attributes::Class)
+        end
+        # rubocop:enable Metrics/MethodLength
       end
 
-      def initialize(configuration, writable:)
+      def initialize(configuration, writable:, target:, declared_attributes:)
         super()
 
+        validate_collisions!(target, declared_attributes, writable: writable)
         const_set(Strict::Attributes::Class::CONSTANT, configuration)
         configuration.each do |attribute|
           define_reader(attribute)
@@ -25,6 +52,25 @@ module Strict
       end
 
       private
+
+      def validate_collisions!(target, attributes, writable:)
+        attributes.each do |attribute|
+          validate_method_available!(target, attribute.name)
+          validate_method_available!(target, :"#{attribute.name}=") if writable
+        end
+      end
+
+      def validate_method_available!(target, name)
+        return unless method_defined?(target, name) || method_defined?(Strict::Attributes::Instance, name)
+
+        raise ArgumentError, "Generated attribute method #{name.inspect} already exists for #{target}"
+      end
+
+      def method_defined?(owner, name)
+        owner.public_method_defined?(name) ||
+          owner.protected_method_defined?(name) ||
+          owner.private_method_defined?(name)
+      end
 
       def define_reader(attribute)
         storage_name = attribute.instance_variable.to_s.delete_prefix("@").to_sym

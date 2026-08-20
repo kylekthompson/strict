@@ -64,14 +64,21 @@ RSpec.describe Strict::Attributes::Dsl do
       expect(configuration.named!(:range_of).validator).to be_an_instance_of(Strict::Validators::RangeOf)
     end
 
-    it "allows overwriting attributes" do
-      configuration = described_class.run do
-        foo String
-        foo Integer
-      end
+    it "rejects duplicate attributes" do
+      expect do
+        described_class.run do
+          foo String
+          foo Integer
+        end
+      end.to raise_error(ArgumentError)
+    end
 
-      expect(configuration.map(&:name)).to eq(%i[foo])
-      expect(configuration.map(&:validator)).to eq([Integer])
+    it "rejects attributes inherited by the declaration" do
+      inherited = Strict::Attribute.make(:foo, String)
+
+      expect do
+        described_class.run(attributes: [inherited]) { foo Integer }
+      end.to raise_error(ArgumentError)
     end
 
     it "allows manually creating attributes" do

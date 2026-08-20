@@ -346,6 +346,35 @@ RSpec.describe Strict::Union do
           end
         end
       end
-    end.to raise_error(ArgumentError, /cannot redeclare discriminator :kind/)
+    end.to raise_error(ArgumentError)
+  end
+
+  it "rejects variant attributes that duplicate shared attributes" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        attributes { request_id String }
+        variant :invalid do
+          attributes { request_id Integer }
+        end
+      end
+    end.to raise_error(ArgumentError)
+  end
+
+  it "rejects variant attributes that collide with variant methods" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        variant :invalid do
+          def result = "method"
+
+          attributes { result String }
+        end
+      end
+    end.to raise_error(ArgumentError)
   end
 end

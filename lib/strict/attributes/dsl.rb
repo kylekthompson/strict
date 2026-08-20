@@ -22,6 +22,10 @@ module Strict
 
       def strict_attribute(*, **)
         attribute = ::Strict::Attribute.make(*, **)
+        if __strict_dsl_internal_attributes.key?(attribute.name)
+          ::Kernel.raise ::ArgumentError, "Attribute #{attribute.name.inspect} is already declared"
+        end
+
         __strict_dsl_internal_attributes[attribute.name] = attribute
         nil
       end

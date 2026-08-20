@@ -3,6 +3,8 @@
 module Strict
   class Declaration
     NOT_PROVIDED = ::Object.new.freeze
+    DECLARATION_NAME = /\A[a-z_][a-zA-Z0-9_]*[!?]?\z/
+    private_constant :DECLARATION_NAME
 
     class << self
       def make(
@@ -11,9 +13,9 @@ module Strict
         coerce: validator.respond_to?(:coercer) ? validator.coercer : false,
         **defaults
       )
-        unless valid_defaults?(**defaults)
-          raise ArgumentError, "Only one of 'default', 'default_value', or 'default_generator' can be provided"
-        end
+        validate_name!(name)
+        validate_defaults!(**defaults)
+        validate_coercer!(coerce)
 
         new(
           name: name.to_sym,
@@ -25,12 +27,43 @@ module Strict
 
       private
 
+      def validate_name!(name)
+        supported_type = name.is_a?(::String) || name.is_a?(::Symbol)
+        return if supported_type && DECLARATION_NAME.match?(name.to_s)
+
+        raise ArgumentError, "Declaration name must be a supported String or Symbol, got #{name.inspect}"
+      end
+
+      def validate_defaults!(**defaults)
+        unless valid_defaults?(**defaults)
+          raise ArgumentError, "Only one of 'default', 'default_value', or 'default_generator' can be provided"
+        end
+
+        validate_default_generator!(**defaults)
+      end
+
       def valid_defaults?(default: NOT_PROVIDED, default_value: NOT_PROVIDED, default_generator: NOT_PROVIDED)
         defaults_provided = [default, default_value, default_generator].count do |default_option|
           !default_option.equal?(NOT_PROVIDED)
         end
 
         defaults_provided <= 1
+      end
+
+      def validate_default_generator!(default_generator: NOT_PROVIDED, **)
+        return if default_generator.equal?(NOT_PROVIDED) || default_generator.respond_to?(:call)
+
+        raise ArgumentError, "default_generator must be callable, got #{default_generator.inspect}"
+      end
+
+      def validate_coercer!(coercer)
+        return if coercer_supported?(coercer)
+
+        raise ArgumentError, "Unsupported coercer: #{coercer.inspect}"
+      end
+
+      def coercer_supported?(coercer)
+        coercer.equal?(false)
       end
 
       def make_default_generator(default: NOT_PROVIDED, default_value: NOT_PROVIDED, default_generator: NOT_PROVIDED)

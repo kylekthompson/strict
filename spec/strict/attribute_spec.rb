@@ -95,6 +95,24 @@ RSpec.describe Strict::Attribute do
         described_class.make(:attr_name, default: 1, default_value: 1)
       end.to raise_error(ArgumentError)
     end
+
+    it "requires a supported declaration name" do
+      [nil, 1, "", :+, :"attr_name=", :"two words", :"attr[]"].each do |name|
+        expect { described_class.make(name) }.to raise_error(ArgumentError)
+      end
+    end
+
+    it "requires an explicit default generator to be callable" do
+      expect do
+        described_class.make(:attr_name, default_generator: "not callable")
+      end.to raise_error(ArgumentError)
+    end
+
+    it "requires a supported attribute coercer" do
+      [nil, 1, "coerce", Object.new].each do |coercer|
+        expect { described_class.make(:attr_name, coerce: coercer) }.to raise_error(ArgumentError)
+      end
+    end
   end
 
   describe "#valid?" do

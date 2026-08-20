@@ -2,6 +2,14 @@
 
 module Strict
   class Parameter < Declaration
+    class << self
+      private
+
+      def coercer_supported?(coercer)
+        super || coercer.respond_to?(:call)
+      end
+    end
+
     def coerce(value)
       return value unless coercer
 

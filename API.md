@@ -20,7 +20,7 @@ The former `extend Strict::Method` and `extend Strict::Interface` forms are not 
 
 `Strict::Value` and `Strict::Object` add an `attributes` declaration block. Each declaration accepts an attribute name, an optional validator, `coerce:`, and one of `default:`, `default_value:`, or `default_generator:`.
 
-Attribute names can be ordinary identifiers, Ruby reserved words declared through `strict_attribute`, or names ending in `?` or `!`. Each distinct name has independent backing storage, including names that differ only by a trailing `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
+Attribute names must be strings or symbols in the supported identifier shape: a lowercase ASCII letter or underscore, followed by ASCII letters, digits, or underscores, with one optional trailing `?` or `!`. Ruby reserved words use `strict_attribute`, for example `strict_attribute :if`. Empty names, operators, setters, and other method-name forms are rejected. Each distinct supported name has independent backing storage, including names that differ only by a trailing `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
 
 Both capabilities provide:
 
@@ -40,7 +40,9 @@ Both capabilities provide:
 - `==` and `eql?`, based on exact class and attribute values;
 - `hash`, consistent with `eql?`.
 
-A subclass inherits its parent's attributes. A subclass `attributes` block adds its declarations after the inherited declarations without changing the parent. Attribute redeclaration, multiple `attributes` blocks on the same class, and generated-method collisions are outside the compatibility boundary.
+A class can execute at most one `attributes` block, and an empty block counts as that one block. A subclass inherits its parent's attributes and can execute one additive `attributes` block without changing the parent. An attribute cannot duplicate another attribute in the same block or an inherited attribute.
+
+Before it installs generated methods, Strict rejects an attribute whose reader would collide with any existing public, protected, or private instance method. This includes methods supplied by Ruby and Strict, such as `class`, `to_h`, `inspect`, `hash`, `eql?`, `initialize`, `pretty_print`, and `public_send`. `Strict::Object` applies the same check to its generated writer. Strict does not police methods defined after the `attributes` block; later overrides remain unsupported. Duplicate attributes, repeated blocks, generated-method collisions, and invalid names or declaration options raise `ArgumentError` at declaration time.
 
 #### Attribute introspection
 
@@ -57,7 +59,7 @@ The descriptor's concrete class and other methods are implementation details.
 - `default: value` uses the value directly.
 - `default: callable` calls it for each default.
 - `default_value: value` preserves the value even when it is callable.
-- `default_generator: callable` calls it for each default.
+- `default_generator: callable` calls it for each default and requires an object that responds to `call`.
 
 Only one default option can be present on one declaration.
 
@@ -65,12 +67,13 @@ Only one default option can be present on one declaration.
 
 `coerce:` accepts:
 
+- omission, which uses `validator.coercer` when available and otherwise disables coercion;
+- `false`, which disables coercion inherited from the validator;
 - a callable;
 - a class method name as a symbol;
-- `true`, which calls the class method `coerce_<attribute>`;
-- `false`, which disables coercion inherited from the validator.
+- `true`, which calls the class method `coerce_<attribute>`.
 
-When `coerce:` is omitted and the validator responds to `coercer`, Strict uses `validator.coercer`.
+Other coercer forms raise `ArgumentError` at declaration time. Strict does not require a class-method coercer selected by a symbol or `true` to exist when the attribute is declared. The receiving class resolves it during initialization or assignment, so a subclass can provide or override it.
 
 The generated class `coercer` returns `nil`, non-hash-like values, and instances of that exact class unchanged. A subclass instance is not an exact-class match: a parent class coercer treats it as hash-like input and creates a new parent instance from the parent's declared attributes. For other hash-like input, the coercer recognizes declared symbol or string keys and initializes the class with those values.
 
@@ -122,7 +125,7 @@ PaymentResult::Authorized.new(
 # => { status: "payment.authorized", request_id: "request_123", authorization_id: "auth_123", amount_in_cents: 1_000 }
 ```
 
-Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, and pattern matching. A variant declaration cannot redeclare the discriminator. The union base cannot be instantiated directly.
+Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, pattern matching, and declaration errors. A variant attribute cannot duplicate the discriminator or a shared union attribute, and generated readers cannot collide with methods defined in the variant block. The union base cannot be instantiated directly.
 
 `PaymentResult === value` is true only when `value` has the exact class of a registered variant. Generated variant classes retain normal Ruby class matching, including matching instances of their subclasses. Union and variant inheritance are outside the compatibility boundary.
 
@@ -148,17 +151,17 @@ Declaring a discriminator more than once, declaring equivalent duplicate string 
 
 `Strict::Method` adds `sig`, which applies to the next instance or singleton method definition. A signature supports required and optional positional parameters, `*rest`, required and optional keyword parameters, `**keyrest`, and an optional `returns` declaration. Blocks pass through without validation.
 
-Parameter declarations accept a validator, a callable `coerce:`, and the three default forms described above. `strict_parameter` supports names that cannot be expressed as ordinary calls in the DSL.
+Parameter declaration names must be supported strings or symbols in the identifier shape documented for attributes and must match the signed Ruby method's parameters. `strict_parameter` supports Ruby reserved words that cannot be expressed as ordinary calls in the DSL. Parameter declarations accept a validator, `coerce: false` or a callable coercer, and the three default forms described above. Other coercer forms raise `ArgumentError` at declaration time.
 
-Strict verifies that signature names match the method definition. Calls coerce parameters, validate parameters, invoke the method, and validate its return value. A signature with no `returns` declaration accepts any return value.
+Strict verifies that signature names match the method definition. Calls coerce parameters, validate parameters, invoke the method, and validate its return value. `returns` is validate-only: the exact object produced by the method is the object returned to its caller. It does not accept `coerce:` or any other keyword and never transforms the returned value. A signature with no `returns` declaration accepts any return value.
+
+A signature cannot declare the same parameter more than once or contain more than one `returns` declaration. Invalid names, invalid defaults or coercers, duplicate parameters, repeated returns, and unsupported return options raise `ArgumentError` when the signature is declared. Exact error messages are not fixed.
 
 Inherited signed methods remain validated. A subclass override is unsigned unless the subclass provides a new signature.
 
 The following behavior is outside the compatibility boundary:
 
-- return-value coercion;
 - private or protected signed methods;
-- duplicate parameter declarations;
 - repeated signatures or same-class method redefinition;
 - DSL expression return values;
 - generated wrapper owners, ancestors, parameters, source locations, or other reflection details.
@@ -284,7 +287,7 @@ The supported configuration options are `random` and `sample_rate`, with readers
 
 Overrides are local to the current execution context (fiber), can be nested, and are restored when a block returns or raises. Neither a newly created fiber nor a new thread inherits an active override. An active override cannot be changed with `Strict.configure`.
 
-Sampling controls validator calls. Coercion, signature-definition checks, and interface conformance checks still run when validation is sampled out.
+Sampling controls validator calls. Attribute and parameter coercion, signature-definition checks, and interface conformance checks still run when validation is sampled out. Return validation can be sampled out, but return coercion never occurs.
 
 Direct construction of `Strict::Configuration`, its `validate?` and `to_h` methods, block return values, and configuration object identity are outside the compatibility boundary.
 
