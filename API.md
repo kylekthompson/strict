@@ -117,6 +117,13 @@ The union class `coercer`:
 - dispatches hash-like input through the selected variant's value coercer;
 - raises `ArgumentError` when the discriminator is missing or unknown.
 
+A union class can be an attribute or method validator. Add its coercer when the declaration must also accept hash-like input:
+
+```ruby
+payment_result PaymentResult
+coerced_payment_result PaymentResult, coerce: PaymentResult.coercer
+```
+
 Declaring a discriminator more than once, declaring a duplicate tag, using an invalid variant name, or replacing an existing generated constant raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
 
 ### Signed methods
