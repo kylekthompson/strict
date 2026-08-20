@@ -34,6 +34,11 @@ module Strict
         @parameters_index = parameters.to_h { |p| [p.name, p] }
         @returns = returns
         @instance = instance
+        @parameter_bindings = compile_parameter_bindings
+        @keyword_parameter_names = parameter_bindings.filter_map do |binding|
+          binding.name if binding.kind == :keyword
+        end.freeze
+        @accepts_keyrest = parameter_bindings.any? { |binding| binding.kind == :keyrest }
       end
 
       def to_s
@@ -42,7 +47,7 @@ module Strict
 
       def verify_definition!
         expected_parameters = Set.new(parameters.map(&:name))
-        defined_parameters = Set.new(method.parameters.filter_map { |kind, name| name unless kind == :block })
+        defined_parameters = Set.new(parameter_bindings.map(&:name))
         return if expected_parameters == defined_parameters
 
         missing_parameters = expected_parameters - defined_parameters
@@ -54,55 +59,86 @@ module Strict
         )
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
-      # TODO(kkt): clean this up- it's late, though, and the tests are passing
-      def verify_parameters!(*args, **kwargs)
+      # rubocop:disable Metrics/AbcSize, Metrics/BlockLength, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+      def verify_parameters!(args, kwargs, configuration)
         invalid_parameters = nil
         missing_parameters = nil
+        verified_args = nil
+        verified_kwargs = nil
+        positional_index = 0
 
-        positional_arguments = []
-        keyword_arguments = {}
+        parameter_bindings.each do |binding|
+          parameter = binding.parameter || parameter_named!(binding.name)
+          positional_start = positional_index
+          original_value = case binding.kind
+                           when :positional
+                             if positional_index < args.length
+                               positional_index += 1
+                               args.fetch(positional_start)
+                             else
+                               NOT_PROVIDED
+                             end
+                           when :optional_positional
+                             if args.length - positional_index > binding.required_after
+                               positional_index += 1
+                               args.fetch(positional_start)
+                             else
+                               NOT_PROVIDED
+                             end
+                           when :rest
+                             count = args.length - positional_index - binding.required_after
+                             count = 0 if count.negative?
+                             positional_index += count
+                             if positional_start.zero? && count == args.length
+                               args
+                             else
+                               args.slice(positional_start, count)
+                             end
+                           when :keyword
+                             kwargs.key?(binding.name) ? kwargs.fetch(binding.name) : NOT_PROVIDED
+                           when :keyrest
+                             keyrest_value(kwargs)
+                           end
 
-        # TODO(kkt): doesn't handle oddly sorted optional positional parameters like def foo(opt = nil, req)
-        method.parameters.each do |kind, name|
-          case kind
-          when POSITIONAL
-            parameter_kind = :positional
-            value = args.any? ? args.shift : NOT_PROVIDED
-          when REST
-            parameter_kind = :rest
-            value = [*args]
-            args.clear
-          when KEYWORD
-            parameter_kind = :keyword
-            value = kwargs.key?(name) ? kwargs.delete(name) : NOT_PROVIDED
-          when KEYREST
-            parameter_kind = :keyrest
-            value = { **kwargs }
-            kwargs.clear
-          end
-          next unless parameter_kind
-
-          parameter = parameter_named!(name)
-          if value.equal?(NOT_PROVIDED) && parameter.optional?
+          if original_value.equal?(NOT_PROVIDED) && parameter.optional?
             value = parameter.default_generator.call
-          elsif value.equal?(NOT_PROVIDED)
+            changed = true
+          elsif original_value.equal?(NOT_PROVIDED)
             missing_parameters ||= []
             missing_parameters << parameter.name
             next
+          else
+            value = original_value
+            changed = false
           end
 
           value = parameter.coerce(value)
-          if parameter.valid?(value)
-            case parameter_kind
-            when :positional
-              positional_arguments << value
+          changed ||= !value.equal?(original_value)
+          if parameter.valid?(value, configuration)
+            case binding.kind
+            when :positional, :optional_positional
+              if verified_args
+                verified_args << value
+              elsif changed
+                verified_args = args.take(positional_start)
+                verified_args << value
+              end
             when :rest
-              positional_arguments.concat(value)
+              if verified_args
+                verified_args.concat(value)
+              elsif rest_changed?(args, positional_start, positional_index, value, parameter.coercer)
+                verified_args = args.take(positional_start)
+                verified_args.concat(value)
+              end
             when :keyword
-              keyword_arguments[name] = value
+              if changed
+                verified_kwargs ||= kwargs.dup
+                verified_kwargs[binding.name] = value
+              end
             when :keyrest
-              keyword_arguments.merge!(value)
+              if keyrest_changed?(kwargs, value, parameter.coercer)
+                verified_kwargs = merge_keyrest(verified_kwargs, kwargs, value)
+              end
             end
           else
             invalid_parameters ||= {}
@@ -110,41 +146,113 @@ module Strict
           end
         end
 
-        if args.empty? && kwargs.empty? && invalid_parameters.nil? && missing_parameters.nil?
-          [positional_arguments, keyword_arguments]
-        else
-          raise Strict::MethodCallError.new(
-            verifiable_method: self,
-            remaining_args: args,
-            remaining_kwargs: kwargs,
-            invalid_parameters: invalid_parameters,
-            missing_parameters: missing_parameters
-          )
-        end
-      end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
+        if positional_index == args.length && no_additional_keywords?(kwargs) &&
+           invalid_parameters.nil? && missing_parameters.nil?
+          return if verified_args.nil? && verified_kwargs.nil?
 
-      def verify_returns!(value)
+          return [verified_args || args, verified_kwargs || kwargs]
+        end
+
+        raise Strict::MethodCallError.new(
+          verifiable_method: self,
+          remaining_args: args.drop(positional_index),
+          remaining_kwargs: remaining_kwargs_from(kwargs),
+          invalid_parameters: invalid_parameters,
+          missing_parameters: missing_parameters
+        )
+      end
+      # rubocop:enable Metrics/AbcSize, Metrics/BlockLength, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+
+      def verify_returns!(value, configuration)
         value = returns.coerce(value)
-        return if returns.valid?(value)
+        return if returns.valid?(value, configuration)
 
         raise Strict::MethodReturnError.new(verifiable_method: self, value: value)
       end
 
       private
 
-      POSITIONAL = Set.new(%i[req opt])
-      private_constant :POSITIONAL
-      REST = :rest
-      private_constant :REST
-      KEYWORD = Set.new(%i[keyreq key])
-      private_constant :KEYWORD
-      KEYREST = :keyrest
-      private_constant :KEYREST
+      ParameterBinding = Data.define(:kind, :name, :parameter, :required_after)
+      private_constant :ParameterBinding
+      PARAMETER_KINDS = {
+        req: :positional,
+        opt: :optional_positional,
+        rest: :rest,
+        keyreq: :keyword,
+        key: :keyword,
+        keyrest: :keyrest
+      }.freeze
+      private_constant :PARAMETER_KINDS
       NOT_PROVIDED = ::Object.new.freeze
       private_constant :NOT_PROVIDED
 
-      attr_reader :method, :parameters_index
+      attr_reader :method, :parameters_index, :parameter_bindings, :keyword_parameter_names
+
+      # rubocop:disable Metrics/MethodLength
+      def compile_parameter_bindings
+        required_after = 0
+        method.parameters.reverse_each.filter_map do |kind, name|
+          compiled_kind = PARAMETER_KINDS[kind]
+          next unless compiled_kind
+
+          binding = ParameterBinding.new(
+            kind: compiled_kind,
+            name: name,
+            parameter: parameters_index[name],
+            required_after: required_after
+          )
+          required_after += 1 if kind == :req
+          binding
+        end.reverse.freeze
+      end
+      # rubocop:enable Metrics/MethodLength
+
+      def keyrest_value(kwargs)
+        return kwargs if keyword_parameter_names.empty?
+
+        kwargs.except(*keyword_parameter_names)
+      end
+
+      def rest_changed?(args, start, finish, value, coercer)
+        return true if coercer
+        return false if value.equal?(args)
+        return true unless value.length == finish - start
+
+        value.each_index.any? { |index| !value.fetch(index).equal?(args.fetch(start + index)) }
+      end
+
+      def keyrest_changed?(kwargs, value, coercer)
+        return true if coercer
+        return false if value.equal?(kwargs)
+
+        original_size = 0
+        kwargs.each do |name, original_value|
+          next if keyword_parameter_names.include?(name)
+
+          original_size += 1
+          return true unless value.key?(name) && value.fetch(name).equal?(original_value)
+        end
+        value.size != original_size
+      end
+
+      def merge_keyrest(verified_kwargs, kwargs, value)
+        return value if keyword_parameter_names.empty? && !value.equal?(kwargs)
+        return verified_kwargs if keyword_parameter_names.empty?
+
+        (verified_kwargs || kwargs.dup).delete_if do |name, _value|
+          !keyword_parameter_names.include?(name)
+        end.merge!(value)
+      end
+
+      def no_additional_keywords?(kwargs)
+        @accepts_keyrest || kwargs.none? { |name, _value| !keyword_parameter_names.include?(name) }
+      end
+
+      def remaining_kwargs_from(kwargs)
+        return {} if @accepts_keyrest
+
+        kwargs.except(*keyword_parameter_names)
+      end
 
       def instance?
         @instance

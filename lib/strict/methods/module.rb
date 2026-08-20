@@ -10,10 +10,12 @@ module Strict
 
         @verifiable_method = verifiable_method
         define_method verifiable_method.name do |*args, **kwargs, &block|
-          args, kwargs = verifiable_method.verify_parameters!(*args, **kwargs)
+          configuration = Strict.configuration
+          verified_arguments = verifiable_method.verify_parameters!(args, kwargs, configuration)
+          args, kwargs = verified_arguments if verified_arguments
 
           super(*args, **kwargs, &block).tap do |value|
-            verifiable_method.verify_returns!(value)
+            verifiable_method.verify_returns!(value, configuration)
           end
         end
       end

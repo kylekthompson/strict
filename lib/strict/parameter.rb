@@ -55,8 +55,8 @@ module Strict
       @optional
     end
 
-    def valid?(value)
-      return true unless Strict.configuration.validate?
+    def valid?(value, configuration = Strict.configuration)
+      return true unless configuration.validate?
 
       validator === value
     end

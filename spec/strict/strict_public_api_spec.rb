@@ -230,6 +230,25 @@ RSpec.describe Strict do
       expect(random_values).to be_empty
     end
 
+    it "supports an optional positional parameter before a required positional parameter" do
+      method_class = Class.new do
+        include Strict::Method
+
+        sig do
+          prefix String, default: "default"
+          value Integer
+          returns Array
+        end
+        # rubocop:disable Style/OptionalArguments
+        def call(prefix = nil, value) = [prefix, value]
+        # rubocop:enable Style/OptionalArguments
+      end
+      method = method_class.new
+
+      expect(method.call(1)).to eq(["default", 1])
+      expect(method.call("given", 1)).to eq(["given", 1])
+    end
+
     it "keeps inherited signed methods validated and treats unsigned overrides normally" do
       parent_class = Class.new do
         include Strict::Method
