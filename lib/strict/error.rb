@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
 module Strict
-  Error = Class.new(StandardError)
+  class Error < StandardError
+  end
 end

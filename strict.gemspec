@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Strictly define a contract for your objects and methods"
   spec.homepage = "https://github.com/kylekthompson/strict"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.0.0"
+  spec.required_ruby_version = ">= 3.3.0"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
@@ -29,5 +29,5 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "zeitwerk", "~> 2.6"
+  spec.add_dependency "zeitwerk", "~> 2.8"
 end

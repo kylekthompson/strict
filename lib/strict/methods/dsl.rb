@@ -4,9 +4,9 @@ module Strict
   module Methods
     class Dsl < BasicObject
       class << self
-        def run(&block)
+        def run(&)
           dsl = new
-          dsl.instance_eval(&block)
+          dsl.instance_eval(&)
           ::Strict::Methods::Configuration.new(
             parameters: dsl.__strict_dsl_internal_parameters.values,
             returns: dsl.__strict_dsl_internal_returns
@@ -24,20 +24,20 @@ module Strict
         @__strict_dsl_internal_returns = ::Strict::Return.make
       end
 
-      def returns(*args, **kwargs)
-        self.__strict_dsl_internal_returns = ::Strict::Return.make(*args, **kwargs)
+      def returns(*, **)
+        self.__strict_dsl_internal_returns = ::Strict::Return.make(*, **)
         nil
       end
 
-      def strict_parameter(*args, **kwargs)
-        parameter = ::Strict::Parameter.make(*args, **kwargs)
+      def strict_parameter(*, **)
+        parameter = ::Strict::Parameter.make(*, **)
         __strict_dsl_internal_parameters[parameter.name] = parameter
         nil
       end
 
-      def method_missing(name, *args, **kwargs)
+      def method_missing(name, *, **)
         if respond_to_missing?(name)
-          strict_parameter(name, *args, **kwargs)
+          strict_parameter(name, *, **)
         else
           super
         end

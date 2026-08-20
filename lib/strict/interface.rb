@@ -12,8 +12,8 @@ module Strict
     end
 
     # rubocop:disable Metrics/MethodLength
-    def expose(method_name, &block)
-      sig = sig(&block)
+    def expose(method_name, &)
+      sig = sig(&)
       parameter_list = [
         *sig.parameters.map { |parameter| "#{parameter.name}:" },
         "&block"

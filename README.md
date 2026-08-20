@@ -4,6 +4,8 @@ Strict provides a means to strictly validate instantiation of values, instantiat
 
 ## Installation
 
+Strict requires Ruby 3.3 or newer.
+
 Install the gem and add to the application's Gemfile by executing:
 
 ```sh

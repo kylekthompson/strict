@@ -22,7 +22,7 @@ module Strict
       original_thread_configuration = thread_configuration
 
       begin
-        self.thread_configuration = Strict::Configuration.new(**configuration.to_h.merge(overrides))
+        self.thread_configuration = Strict::Configuration.new(**configuration.to_h, **overrides)
         yield
       ensure
         self.thread_configuration = original_thread_configuration

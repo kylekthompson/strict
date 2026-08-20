@@ -8,9 +8,9 @@ module Strict
       mod.singleton_class.extend(self)
     end
 
-    def sig(&block)
+    def sig(&)
       instance = singleton_class? ? self : singleton_class
-      instance.instance_variable_set(:@__strict_method_internal_last_sig_configuration, Methods::Dsl.run(&block))
+      instance.instance_variable_set(:@__strict_method_internal_last_sig_configuration, Methods::Dsl.run(&))
     end
 
     def strict_class_methods
