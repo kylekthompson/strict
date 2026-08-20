@@ -11,10 +11,26 @@ module Strict
       end
 
       def ===(value)
-        Hash === value && value.all? do |k, v|
-          key_validator === k && value_validator === v
-        end
+        __strict_violations__(value).empty?
       end
+
+      # rubocop:disable Metrics/MethodLength
+      def __strict_violations__(value)
+        return Validation.invalid(self, value) unless Hash === value
+
+        violations = nil
+        value.each do |key, entry_value|
+          key_violations = Validation.violations(key_validator, key)
+          value_violations = Validation.violations(value_validator, entry_value)
+          next if key_violations.empty? && value_violations.empty?
+
+          violations ||= []
+          violations.concat(Validation.prepend_path(key_violations, key))
+          violations.concat(Validation.prepend_path(value_violations, key))
+        end
+        violations || Validation::NONE
+      end
+      # rubocop:enable Metrics/MethodLength
 
       def inspect
         "HashOf(#{key_validator.inspect} => #{value_validator.inspect})"

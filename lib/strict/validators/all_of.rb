@@ -10,9 +10,19 @@ module Strict
       end
 
       def ===(value)
-        subvalidators.all? do |subvalidator|
-          subvalidator === value
+        __strict_violations__(value).empty?
+      end
+
+      def __strict_violations__(value)
+        violations = nil
+        subvalidators.each do |subvalidator|
+          subvalidator_violations = Validation.violations(subvalidator, value)
+          next if subvalidator_violations.empty?
+
+          violations ||= []
+          violations.concat(subvalidator_violations)
         end
+        violations || Validation::NONE
       end
 
       def inspect

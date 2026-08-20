@@ -10,9 +10,21 @@ module Strict
       end
 
       def ===(value)
-        Array === value && value.all? do |v|
-          element_validator === v
+        __strict_violations__(value).empty?
+      end
+
+      def __strict_violations__(value)
+        return Validation.invalid(self, value) unless Array === value
+
+        violations = nil
+        value.each_with_index do |element, index|
+          element_violations = Validation.violations(element_validator, element)
+          next if element_violations.empty?
+
+          violations ||= []
+          violations.concat(Validation.prepend_path(element_violations, index))
         end
+        violations || Validation::NONE
       end
 
       def inspect

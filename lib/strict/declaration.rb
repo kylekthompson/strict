@@ -59,10 +59,10 @@ module Strict
       violations(value, configuration).empty?
     end
 
-    def violations(value, configuration = Strict.configuration, path: Validation::ROOT_PATH)
+    def violations(value, configuration = Strict.configuration)
       return Validation::NONE unless configuration.validate?
 
-      Validation.violations(validator, value, path: path)
+      Validation.violations(validator, value)
     end
   end
 end

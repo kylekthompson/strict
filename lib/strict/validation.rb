@@ -7,15 +7,34 @@ module Strict
 
     module_function
 
-    def violations(validator, value, path: ROOT_PATH)
-      return validator.__strict_violations__(value, path: path) if validator.respond_to?(:__strict_violations__)
+    def violations(validator, value)
+      return validator.__strict_violations__(value) if validator.respond_to?(:__strict_violations__)
       return NONE if validator === value
 
-      invalid(validator, value, path: path)
+      invalid(validator, value)
     end
 
-    def invalid(validator, value, path: ROOT_PATH)
-      [Violation.new(path: path, code: :invalid, value: value, validator: validator)]
+    def invalid(validator, value)
+      [Violation.new(path: ROOT_PATH, code: :invalid, value: value, validator: validator)]
+    end
+
+    def missing(validator, path:)
+      Violation.new(path: path, code: :missing, value: nil, validator: validator)
+    end
+
+    def unexpected(value, path:)
+      Violation.new(path: path, code: :unexpected, value: value, validator: nil)
+    end
+
+    def prepend_path(violations, *segments)
+      violations.map do |violation|
+        Violation.new(
+          path: segments + violation.path,
+          code: violation.code,
+          value: violation.value,
+          validator: violation.validator
+        )
+      end
     end
   end
 end
