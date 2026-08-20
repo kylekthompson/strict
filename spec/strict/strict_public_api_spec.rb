@@ -170,6 +170,71 @@ RSpec.describe Strict do
       expect(object.value!).to eq(:changed)
       expect(object.to_h).to eq(value: "changed", value?: 2, value!: :changed)
     end
+
+    it "inherits writers and resolves class coercers on the receiving class" do
+      parent_class = Class.new do
+        include Strict::Object
+
+        def self.coerce_automatic(value) = "parent #{value}"
+        def self.symbolic(value) = "parent #{value}"
+
+        attributes do
+          automatic String, coerce: true
+          symbolic String, coerce: :symbolic
+        end
+      end
+      child_class = Class.new(parent_class) do
+        def self.coerce_automatic(value) = "child #{value}"
+        def self.symbolic(value) = "child #{value}"
+      end
+      object = child_class.new(automatic: "initial", symbolic: "initial")
+
+      object.automatic = "assigned"
+      object.symbolic = "assigned"
+
+      expect(object.to_h).to eq(automatic: "child assigned", symbolic: "child assigned")
+    end
+
+    it "coerces before sampling each assignment once" do
+      validations = []
+      coercions = []
+      validator = Object.new
+      validator.define_singleton_method(:===) do |value|
+        validations << value
+        value == "initial"
+      end
+      coercer = lambda do |value|
+        coercions << value
+        value.to_s
+      end
+      object_class = Class.new do
+        include Strict::Object
+
+        attributes do
+          value validator, coerce: coercer
+        end
+      end
+      object = object_class.new(value: "initial")
+      validations.clear
+      coercions.clear
+      random_values = [0.75, 0.25]
+      random = Object.new.extend(Random::Formatter)
+      random.define_singleton_method(:rand) { random_values.shift }
+      error = nil
+
+      described_class.with_overrides(random: random, sample_rate: 0.5) do
+        object.value = 1
+        expect do
+          object.value = 2
+        end.to raise_error(Strict::AssignmentError) { |raised_error| error = raised_error }
+      end
+
+      expect(object.value).to eq("1")
+      expect(error.value).to eq("2")
+      expect(coercions).to eq([1, 2])
+      expect(validations).to eq(["2"])
+      expect(random_values).to be_empty
+    end
   end
 
   describe "validators and coercers" do
