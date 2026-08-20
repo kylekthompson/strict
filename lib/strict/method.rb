@@ -44,10 +44,9 @@ module Strict
         singleton_class.instance_variable_set(:@__strict_method_internal_last_sig_configuration, nil)
         return unless sig
 
-        verifiable_method = Methods::VerifiableMethod.new(
+        verifiable_method = Methods::VerifiableMethod.from_method(
           method: singleton_class.instance_method(method_name),
-          parameters: sig.parameters,
-          returns: sig.returns,
+          configuration: sig,
           instance: false
         )
         verifiable_method.verify_definition!
@@ -62,10 +61,9 @@ module Strict
         singleton_class.instance_variable_set(:@__strict_method_internal_last_sig_configuration, nil)
         return unless sig
 
-        verifiable_method = Methods::VerifiableMethod.new(
+        verifiable_method = Methods::VerifiableMethod.from_method(
           method: instance_method(method_name),
-          parameters: sig.parameters,
-          returns: sig.returns,
+          configuration: sig,
           instance: true
         )
         verifiable_method.verify_definition!

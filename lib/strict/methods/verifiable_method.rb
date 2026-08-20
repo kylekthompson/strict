@@ -1,11 +1,19 @@
 # frozen_string_literal: true
 
-require "forwardable"
-
 module Strict
   module Methods
     class VerifiableMethod # rubocop:disable Metrics/ClassLength
-      extend Forwardable
+      class << self
+        def from_method(method:, configuration:, instance:)
+          new(
+            owner: method.owner,
+            name: method.name,
+            invocation_parameters: method.parameters,
+            configuration: configuration,
+            instance: instance
+          )
+        end
+      end
 
       class UnknownParameterError < Error
         attr_reader :parameter_name
@@ -24,25 +32,29 @@ module Strict
         end
       end
 
-      def_delegator :method, :name
+      attr_reader :name, :parameters, :returns
 
-      attr_reader :parameters, :returns
-
-      def initialize(method:, parameters:, returns:, instance:)
-        @method = method
-        @parameters = parameters
-        @parameters_index = parameters.to_h { |p| [p.name, p] }
-        @returns = returns
+      def initialize(owner:, name:, invocation_parameters:, configuration:, instance:)
+        @owner = owner
+        @name = name
+        @parameters = configuration.parameters
+        @returns = configuration.returns
         @instance = instance
-        @parameter_bindings = compile_parameter_bindings
+        compile_invocation(invocation_parameters)
+      end
+
+      def compile_invocation(invocation_parameters)
+        @parameters_index = parameters.to_h { |parameter| [parameter.name, parameter] }
+        @parameter_bindings = compile_parameter_bindings(invocation_parameters)
         @keyword_parameter_names = parameter_bindings.filter_map do |binding|
           binding.name if binding.kind == :keyword
         end.freeze
         @accepts_keyrest = parameter_bindings.any? { |binding| binding.kind == :keyrest }
       end
+      private :compile_invocation
 
       def to_s
-        "#{method.owner}#{separator}#{name}"
+        "#{owner}#{separator}#{name}"
       end
 
       def verify_definition!
@@ -187,12 +199,12 @@ module Strict
       NOT_PROVIDED = ::Object.new.freeze
       private_constant :NOT_PROVIDED
 
-      attr_reader :method, :parameters_index, :parameter_bindings, :keyword_parameter_names
+      attr_reader :owner, :parameters_index, :parameter_bindings, :keyword_parameter_names
 
       # rubocop:disable Metrics/MethodLength
-      def compile_parameter_bindings
+      def compile_parameter_bindings(invocation_parameters)
         required_after = 0
-        method.parameters.reverse_each.filter_map do |kind, name|
+        invocation_parameters.reverse_each.filter_map do |kind, name|
           compiled_kind = PARAMETER_KINDS[kind]
           next unless compiled_kind
 
