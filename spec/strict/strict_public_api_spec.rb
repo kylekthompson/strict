@@ -220,7 +220,6 @@ RSpec.describe Strict do
       parent_class = Class.new do
         include Strict::Object
 
-        def self.coerce_automatic(value) = "parent #{value}"
         def self.symbolic(value) = "parent #{value}"
 
         attributes do

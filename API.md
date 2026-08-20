@@ -73,8 +73,6 @@ Only one default option can be present on one declaration.
 - a class method name as a symbol;
 - `true`, which calls the class method `coerce_<attribute>`.
 
-When `coerce:` is omitted and the validator responds to `coercer`, Strict uses `validator.coercer`.
-
 Other coercer forms raise `ArgumentError` at declaration time. Strict does not require a class-method coercer selected by a symbol or `true` to exist when the attribute is declared. The receiving class resolves it during initialization or assignment, so a subclass can provide or override it.
 
 The generated class `coercer` returns `nil`, non-hash-like values, and instances of that exact class unchanged. A subclass instance is not an exact-class match: a parent class coercer treats it as hash-like input and creates a new parent instance from the parent's declared attributes. For other hash-like input, the coercer recognizes declared symbol or string keys and initializes the class with those values.
