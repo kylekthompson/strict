@@ -1,10 +1,21 @@
 # frozen_string_literal: true
 
+require "open3"
 require "spec_helper"
 require "strict/rspec"
 
 RSpec.describe Strict::RSpec do
   describe "public surface" do
+    it "keeps the core require independent from RSpec" do
+      lib = File.expand_path("../../lib", __dir__)
+      script = 'require "strict"; abort "RSpec loaded" if defined?(RSpec)'
+
+      output, status = Open3.capture2e(RbConfig.ruby, "-I#{lib}", "-e", script)
+
+      expect(output).to be_empty
+      expect(status).to be_success
+    end
+
     it "exposes the helper through RSpec without exposing adapter internals" do
       expect(self).to respond_to(:strict_double)
       expect(described_class.constants(false)).to be_empty

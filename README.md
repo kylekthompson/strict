@@ -298,9 +298,18 @@ storage = Storage.new(Storages::Wat.new)
 # => Strict::ImplementationDoesNotConformError
 ```
 
-### Experimental RSpec extensions
+### RSpec extensions
 
-Add RSpec to the test bundle and require the opt-in adapter from the spec helper:
+Strict provides supported, opt-in integration with RSpec 3.13. RSpec remains an optional dependency and is not loaded by
+`require "strict"`. Add RSpec to the test bundle:
+
+```rb
+group :test do
+  gem "rspec", "~> 3.13"
+end
+```
+
+Then require the adapter from the spec helper:
 
 ```rb
 require "strict/rspec"

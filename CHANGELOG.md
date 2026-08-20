@@ -6,6 +6,7 @@
 - Add closed discriminated unions whose generated variants use `Strict::Value` for attributes and value behavior.
 - Add inherited value and object attribute declarations and shared union attributes.
 - Add structured validation violations with paths, codes, rejected values, and validators for assignment, initialization, signed method calls, and returns, plus an optional detailed-validator protocol for custom nested failures.
+- Add opt-in RSpec matchers, verifying doubles, and nested matcher placeholders for Strict values and validations.
 
 ### Breaking changes
 

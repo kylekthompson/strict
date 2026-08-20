@@ -1,0 +1,10 @@
+module Strict
+  # Extend this type-only interface in application test signatures for RSpec
+  # example contexts that load strict/rspec.
+  interface _RSpecExampleMethods
+    def strict_double: (Module strict_class, ?Hash[Symbol, untyped] stubs) -> untyped
+  end
+
+  module RSpec
+  end
+end
