@@ -4,9 +4,9 @@ module Strict
   module Attributes
     class Dsl < BasicObject
       class << self
-        def run(&block)
+        def run(&)
           dsl = new
-          dsl.instance_eval(&block)
+          dsl.instance_eval(&)
           ::Strict::Attributes::Configuration.new(attributes: dsl.__strict_dsl_internal_attributes.values)
         end
       end
@@ -20,15 +20,15 @@ module Strict
         @__strict_dsl_internal_attributes = {}
       end
 
-      def strict_attribute(*args, **kwargs)
-        attribute = ::Strict::Attribute.make(*args, **kwargs)
+      def strict_attribute(*, **)
+        attribute = ::Strict::Attribute.make(*, **)
         __strict_dsl_internal_attributes[attribute.name] = attribute
         nil
       end
 
-      def method_missing(name, *args, **kwargs)
+      def method_missing(name, *, **)
         if respond_to_missing?(name)
-          strict_attribute(name, *args, **kwargs)
+          strict_attribute(name, *, **)
         else
           super
         end

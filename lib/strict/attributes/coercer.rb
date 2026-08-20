@@ -3,6 +3,8 @@
 module Strict
   module Attributes
     class Coercer
+      NOT_PROVIDED = ::Object.new.freeze
+
       attr_reader :attributes_class
 
       def initialize(attributes_class)
@@ -16,8 +18,6 @@ module Strict
       end
 
       private
-
-      NOT_PROVIDED = ::Object.new.freeze
 
       def coerce(hash)
         attributes_class.new(

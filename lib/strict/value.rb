@@ -7,7 +7,7 @@ module Strict
     end
 
     def with(**attributes)
-      self.class.new(**to_h.merge(attributes))
+      self.class.new(**to_h, **attributes)
     end
 
     def eql?(other)

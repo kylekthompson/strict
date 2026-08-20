@@ -6,15 +6,13 @@ describe Strict::Validators::AllOf do
   describe "#===" do
     before do
       @value = 1
-      @validates = Module.new do
-        def self.===(value)
-          value == 1
-        end
+      @validates = Module.new
+      @validates.define_singleton_method(:===) do |value|
+        value == 1
       end
-      @invalidates = Module.new do
-        def self.===(value)
-          value == 2
-        end
+      @invalidates = Module.new
+      @invalidates.define_singleton_method(:===) do |value|
+        value == 2
       end
     end
 
