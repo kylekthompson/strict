@@ -65,6 +65,7 @@ module Strict
         missing_parameters = nil
         verified_args = nil
         verified_kwargs = nil
+        positional_argument_count = args.length
         positional_index = 0
 
         parameter_bindings.each do |binding|
@@ -72,24 +73,24 @@ module Strict
           positional_start = positional_index
           original_value = case binding.kind
                            when :positional
-                             if positional_index < args.length
+                             if positional_index < positional_argument_count
                                positional_index += 1
                                args.fetch(positional_start)
                              else
                                NOT_PROVIDED
                              end
                            when :optional_positional
-                             if args.length - positional_index > binding.required_after
+                             if positional_argument_count - positional_index > binding.required_after
                                positional_index += 1
                                args.fetch(positional_start)
                              else
                                NOT_PROVIDED
                              end
                            when :rest
-                             count = args.length - positional_index - binding.required_after
+                             count = positional_argument_count - positional_index - binding.required_after
                              count = 0 if count.negative?
                              positional_index += count
-                             if positional_start.zero? && count == args.length
+                             if positional_start.zero? && count == positional_argument_count
                                args
                              else
                                args.slice(positional_start, count)
@@ -146,7 +147,7 @@ module Strict
           end
         end
 
-        if positional_index == args.length && no_additional_keywords?(kwargs) &&
+        if positional_index == positional_argument_count && no_additional_keywords?(kwargs) &&
            invalid_parameters.nil? && missing_parameters.nil?
           return if verified_args.nil? && verified_kwargs.nil?
 
@@ -155,7 +156,7 @@ module Strict
 
         raise Strict::MethodCallError.new(
           verifiable_method: self,
-          remaining_args: args.drop(positional_index),
+          remaining_args: args.slice(positional_index, positional_argument_count - positional_index) || [],
           remaining_kwargs: remaining_kwargs_from(kwargs),
           invalid_parameters: invalid_parameters,
           missing_parameters: missing_parameters
