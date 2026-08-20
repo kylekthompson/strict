@@ -13,6 +13,10 @@ module Strict
         Interfaces::Coercer.new(self)
       end
 
+      def strict_interface_conformance
+        @strict_interface_conformance ||= Interfaces::Conformance.new(self)
+      end
+
       def expose(method_name, &)
         method_name = method_name.to_sym
         configuration = Methods::Dsl.run(&)
@@ -23,6 +27,7 @@ module Strict
         )
 
         strict_instance_methods[method_name] = verifiable_method
+        strict_interface_conformance.compile(verifiable_method)
         strict_method_wrapper(self).wrap(verifiable_method, invocation_target: :implementation)
       end
     end
