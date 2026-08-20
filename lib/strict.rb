@@ -2,6 +2,7 @@
 
 require "zeitwerk"
 loader = Zeitwerk::Loader.for_gem
+loader.ignore("#{__dir__}/strict/rspec.rb")
 loader.setup
 
 module Strict
