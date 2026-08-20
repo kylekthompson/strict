@@ -19,7 +19,7 @@ The former `extend Strict::Method` and `extend Strict::Interface` forms are not 
 
 `Strict::Value` and `Strict::Object` add an `attributes` declaration block. Each declaration accepts an attribute name, an optional validator, `coerce:`, and one of `default:`, `default_value:`, or `default_generator:`.
 
-Attribute names can be ordinary identifiers, Ruby reserved words declared through `strict_attribute`, or names ending in `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
+Attribute names can be ordinary identifiers, Ruby reserved words declared through `strict_attribute`, or names ending in `?` or `!`. Each distinct name has independent backing storage, including names that differ only by a trailing `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
 
 Both capabilities provide:
 

@@ -6,7 +6,7 @@ module Strict
 
     def initialize(name:, validator:, default_generator:, coercer:)
       super
-      @instance_variable = "@#{name.to_s.chomp('!').chomp('?')}"
+      @instance_variable = :"@__strict_attribute_#{self.name.to_s.b.unpack1('H*')}"
     end
 
     def coerce(value, for_class:)

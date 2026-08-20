@@ -11,7 +11,7 @@ RSpec.describe Strict::Attribute do
       expect(attribute.validator).to eq(Strict::Validators::Anything.instance)
       expect(attribute.default_generator).to eq(Strict::Attribute::NOT_PROVIDED)
       expect(attribute.coercer).to be_falsey
-      expect(attribute.instance_variable).to eq("@attr_name")
+      expect(attribute.instance_variable).to eq(:@__strict_attribute_617474725f6e616d65)
       expect(attribute).not_to be_optional
     end
 
@@ -23,7 +23,7 @@ RSpec.describe Strict::Attribute do
       expect(attribute.default_generator).not_to eq(Strict::Attribute::NOT_PROVIDED)
       expect(attribute.default_generator.call).to eq(1)
       expect(attribute.coercer).to be_truthy
-      expect(attribute.instance_variable).to eq("@attr_name")
+      expect(attribute.instance_variable).to eq(:@__strict_attribute_617474725f6e616d65)
       expect(attribute).to be_optional
     end
 
