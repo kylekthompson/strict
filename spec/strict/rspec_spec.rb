@@ -194,6 +194,19 @@ RSpec.describe Strict::RSpec do
       expect(Object.new).not_to conform_to(interface_class)
     end
 
+    it "uses the interface implementation verification API without constructing the interface" do
+      implementation = Class.new do
+        def call(value: nil) = value
+      end.new
+
+      allow(interface_class).to receive(:verify_implementation!).and_call_original
+      allow(interface_class).to receive(:new).and_call_original
+
+      expect(implementation).to conform_to(interface_class)
+      expect(interface_class).to have_received(:verify_implementation!).with(implementation)
+      expect(interface_class).not_to have_received(:new)
+    end
+
     it "includes Strict's conformance details when the implementation does not conform" do
       expect do
         expect(Object.new).to conform_to(interface_class)

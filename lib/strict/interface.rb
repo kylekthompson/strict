@@ -13,8 +13,15 @@ module Strict
         Interfaces::Coercer.new(self)
       end
 
-      def strict_interface_conformance
-        @strict_interface_conformance ||= Interfaces::Conformance.new(self)
+      def implemented_by?(implementation)
+        verify_implementation!(implementation)
+        true
+      rescue Strict::ImplementationDoesNotConformError
+        false
+      end
+
+      def verify_implementation!(implementation)
+        strict_interface_conformance.verify!(implementation)
       end
 
       def expose(method_name, &)
@@ -29,6 +36,12 @@ module Strict
         strict_instance_methods[method_name] = verifiable_method
         strict_interface_conformance.compile(verifiable_method)
         strict_method_wrapper(self).wrap(verifiable_method, invocation_target: :implementation)
+      end
+
+      private
+
+      def strict_interface_conformance
+        @strict_interface_conformance ||= Interfaces::Conformance.new(self)
       end
     end
   end
