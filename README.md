@@ -157,6 +157,32 @@ Stateful.new(some_state: "123") == Stateful.new(some_state: "123")
 # => false
 ```
 
+Validation errors provide structured violations with paths into nested values:
+
+```rb
+class Batch
+  include Strict::Value
+
+  attributes do
+    labels ArrayOf(String)
+  end
+end
+
+begin
+  Batch.new(labels: ["ready", 404], extra: true)
+rescue Strict::InitializationError => error
+  error.violations.map do |violation|
+    [violation.path, violation.code, violation.value, violation.validator]
+  end
+end
+# => [
+#      [[:labels, 1], :invalid, 404, String],
+#      [[:extra], :unexpected, true, nil]
+#    ]
+```
+
+The codes are `:invalid`, `:missing`, and `:unexpected`. Custom validators only need to implement `===`; Strict reports a rejected value against that validator at the current path.
+
 ### `Strict::Method`
 
 ```rb

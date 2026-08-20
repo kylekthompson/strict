@@ -177,6 +177,7 @@ Interface subclassing and re-exposing a method are outside the compatibility bou
 ## Validators and coercers
 
 Any object that implements `===` can be a validator. This includes classes, modules, literals, and custom validators.
+When a custom validator rejects a value, Strict reports that validator in one `:invalid` violation. A custom validator does not need to implement a separate failure protocol.
 
 Attribute and method DSL blocks provide these validator constructors:
 
@@ -224,6 +225,17 @@ These exception classes are public and inherit from `Strict::Error`:
 
 Messages identify the failure but their exact wording and formatting are not fixed. Exception constructor signatures are internal.
 
+Every `Strict::Error` provides `#violations`, which returns an array of `Strict::Violation` records. Assignment, initialization, method-call, and method-return errors report runtime validation and structural input failures. Other errors return an empty array.
+
+Each violation provides:
+
+- `path`: the location of the failure;
+- `code`: `:invalid`, `:missing`, or `:unexpected`;
+- `value`: the rejected or unexpected value, or `nil` for a missing value;
+- `validator`: the validator that rejected or required the value, or `nil` for an unexpected value.
+
+An attribute or parameter name is the first path segment. Array elements use zero-based indices, and hash entries use their actual keys. Unexpected positional arguments use their zero-based argument indices. Return values start at the root, so a simple invalid return has an empty path and a nested return starts with its collection segment. `ArrayOf`, `HashOf`, and `AllOf` preserve nested failure paths. Failure order is not fixed.
+
 The supported readers are:
 
 - `AssignmentError#value`
@@ -237,6 +249,6 @@ Readers that expose attribute, parameter, or method descriptors are internal.
 
 ## Constants and implementation details
 
-`Strict::VERSION` is public. `Strict::ISSUE_TRACKER` is internal.
+`Strict::VERSION` and `Strict::Violation` are public. `Strict::ISSUE_TRACKER` is internal.
 
 `Strict::Attribute`, `Strict::Parameter`, `Strict::Return`, `strict_class_methods`, and `strict_instance_methods` are internal. The `Strict::Accessor`, `Strict::Reader`, `Strict::Attributes`, `Strict::Dsl`, `Strict::Interfaces`, `Strict::Methods`, and `Strict::Unions` namespaces and their contents are also internal.

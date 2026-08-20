@@ -38,6 +38,7 @@ module Strict
 
   type attribute_coercion = bool | Symbol | _Coercer[untyped, untyped]
   type method_coercion = false | _Coercer[untyped, untyped]
+  type violation_code = :invalid | :missing | :unexpected
 
   interface _AttributesDsl
     include _ValidationDsl
@@ -146,7 +147,15 @@ module Strict
     attr_accessor sample_rate: Numeric
   end
 
+  class Violation
+    def path: () -> Array[untyped]
+    def code: () -> violation_code
+    def value: () -> untyped
+    def validator: () -> _Validator?
+  end
+
   class Error < StandardError
+    def violations: () -> Array[Violation]
   end
 
   class AssignmentError < Error
