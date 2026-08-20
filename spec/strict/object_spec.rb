@@ -153,6 +153,34 @@ RSpec.describe Strict::Object do
     end.to raise_error(Strict::InitializationError)
   end
 
+  it "returns an exact instance unchanged from its coercer" do
+    instance = build(:strict_object)
+
+    expect(ObjectClass.coercer.call(instance)).to be(instance)
+  end
+
+  it "converts subclass instances into new instances of the coercer's exact class" do
+    person_class = Class.new do
+      include Strict::Object
+
+      attributes do
+        name String
+      end
+    end
+    employee_class = Class.new(person_class) do
+      attributes do
+        employee_id String
+      end
+    end
+    employee = employee_class.new(name: "Ada", employee_id: "employee_123")
+
+    coerced = person_class.coercer.call(employee)
+
+    expect(coerced).to be_an_instance_of(person_class)
+    expect(coerced).not_to be(employee)
+    expect(coerced.to_h).to eq(name: "Ada")
+  end
+
   it "supports predicate and bang attribute names" do
     object_class = Class.new do
       include Strict::Object

@@ -12,7 +12,8 @@ module Strict
       end
 
       def call(value)
-        return value if value.nil? || !value.respond_to?(:to_h)
+        return value if value.nil? || value.instance_of?(attributes_class)
+        return value unless value.respond_to?(:to_h)
 
         coerce(value.to_h)
       end
