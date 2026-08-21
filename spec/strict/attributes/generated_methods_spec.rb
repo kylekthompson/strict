@@ -85,7 +85,7 @@ RSpec.describe Strict::Attributes::GeneratedMethods do
 
   it "rejects generated readers that collide with existing or Strict methods" do
     %i[
-      __send__ as_json class deconstruct_keys eql? hash initialize instance_variable_set inspect method_missing
+      __send__ class deconstruct_keys eql? hash initialize instance_variable_set inspect method_missing
       pretty_print public_send raise to_h with
     ].each do |name|
       expect do

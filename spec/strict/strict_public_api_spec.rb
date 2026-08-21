@@ -65,7 +65,6 @@ RSpec.describe Strict do
         explicit_generator: "generated"
       }
       expect(value.to_h).to eq(expected_attributes)
-      expect(value.as_json).to eq(expected_attributes)
       expect(value.public_send(:if)).to eq("yes")
       expect(value.active?).to be(true)
       expect(value).to eq(equal_value)
@@ -149,7 +148,6 @@ RSpec.describe Strict do
             name Integer
           end
         end,
-        -> { attributes { as_json Hash } },
         -> { attributes { to_h Hash } }
       ]
 

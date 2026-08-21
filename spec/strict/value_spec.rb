@@ -146,13 +146,7 @@ RSpec.describe Strict::Value do
     expect(instance.to_h).to eq(foo: 1, bar: "2", baz: "3")
   end
 
-  it "turns into a JSON representation of its attributes" do
-    instance = build(:value)
-
-    expect(instance.as_json).to eq(foo: 1, bar: "2", baz: "3")
-  end
-
-  it "uses Active Support's hash serialization when it is available" do
+  it "uses Active Support's default object serialization when it is available" do
     lib = File.expand_path("../../lib", __dir__)
     script = <<~'RUBY'
       require "active_support"
@@ -180,7 +174,7 @@ RSpec.describe Strict::Value do
         "occurred_at" => "2026-08-21T00:00:00.000Z",
         "metadata" => { "source" => "api" }
       }
-      actual = value.as_json(except: :secret)
+      actual = value.as_json(except: "secret")
       abort "expected #{expected.inspect}, got #{actual.inspect}" unless actual == expected
     RUBY
 
