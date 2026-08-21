@@ -40,6 +40,26 @@ RSpec.describe Strict::Union do
     expect(union_class === declined).to be(true)
   end
 
+  it "generates an interrogation method for each variant" do
+    authorized = union_class::Authorized.new(authorization_id: "auth_123", amount_in_cents: 1_000)
+    declined = union_class::Declined.new(reason: "insufficient_funds")
+
+    expect(authorized.authorized?).to be(true)
+    expect(authorized.declined?).to be(false)
+    expect(declined.authorized?).to be(false)
+    expect(declined.declined?).to be(true)
+  end
+
+  it "generates a class-level constructor for each variant" do
+    authorized = union_class.authorized(authorization_id: "auth_123", amount_in_cents: 1_000)
+    declined = union_class.declined(reason: "insufficient_funds")
+
+    expect(authorized).to eq(
+      union_class::Authorized.new(authorization_id: "auth_123", amount_in_cents: 1_000)
+    )
+    expect(declined).to eq(union_class::Declined.new(reason: "insufficient_funds"))
+  end
+
   it "shares union attributes across variants" do
     result_class = Class.new do
       include Strict::Union
@@ -116,10 +136,13 @@ RSpec.describe Strict::Union do
     authorized = result_class::Authorized.new(status: :"some-string", authorization_id: "auth_123")
     string_input = result_class.coercer.call(status: "some-string", authorization_id: "auth_123")
     symbol_input = result_class.coercer.call(status: :"some-string", authorization_id: "auth_123")
+    convenience = result_class.authorized(authorization_id: "auth_123")
 
     expect(authorized.to_h).to eq(status: "some-string", authorization_id: "auth_123")
     expect(string_input).to eq(authorized)
     expect(symbol_input).to eq(authorized)
+    expect(convenience).to eq(authorized)
+    expect(convenience.authorized?).to be(true)
   end
 
   it "automatically coerces values when used as an attribute validator" do
@@ -399,5 +422,55 @@ RSpec.describe Strict::Union do
         end
       end
     end.to raise_error(ArgumentError)
+  end
+
+  it "rejects variant behavior that collides with its interrogation method" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        variant :complete do
+          def complete? = false
+        end
+      end
+    end.to raise_error(ArgumentError, /interrogation method :complete\? already exists/)
+  end
+
+  it "rejects behavior that collides with another variant's interrogation method" do
+    future_collision = Class.new do
+      include Strict::Union
+
+      discriminator :kind
+      variant :first do
+        def second? = false
+      end
+    end
+    existing_collision = Class.new do
+      include Strict::Union
+
+      discriminator :kind
+      variant :first
+    end
+
+    expect do
+      future_collision.variant :second
+    end.to raise_error(ArgumentError, /interrogation method :second\? already exists/)
+    expect do
+      existing_collision.variant :second do
+        def first? = false
+      end
+    end.to raise_error(ArgumentError, /interrogation method :first\? already exists/)
+  end
+
+  it "rejects variant names that collide with class-level convenience methods" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        variant :name
+      end
+    end.to raise_error(ArgumentError, /variant convenience method :name already exists/)
   end
 end

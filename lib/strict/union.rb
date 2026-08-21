@@ -43,6 +43,7 @@ module Strict
         tag_key = strict_union_tag_key(tag)
         constant_name = strict_union_validate_variant!(name, tag, tag_key)
         variant_class = strict_union_build_variant(discriminator, name, tag, definition)
+        strict_union_validate_interrogation_method!(name, variant_class)
         strict_union_register_variant(name, tag, tag_key, constant_name, variant_class)
       end
 
@@ -66,15 +67,48 @@ module Strict
         raise ArgumentError, "tag #{tag.inspect} already declared for #{self}" if @strict_union_variants.key?(tag_key)
         raise ArgumentError, "constant #{constant_name} is already defined for #{self}" if
           const_defined?(constant_name, false)
+        raise ArgumentError, "variant convenience method #{name.inspect} already exists for #{self}" if
+          strict_union_method_defined?(singleton_class, name)
 
         constant_name
+      end
+
+      def strict_union_validate_interrogation_method!(name, variant_class)
+        method_name = strict_union_interrogation_method(name)
+        owners = [self, *@strict_union_variant_names.values, variant_class]
+        conflicting_owner = owners.find { |owner| strict_union_method_defined?(owner, method_name) }
+        raise ArgumentError, "interrogation method #{method_name.inspect} already exists for #{conflicting_owner}" if
+          conflicting_owner
+
+        strict_union_validate_existing_interrogation_methods!(variant_class)
+      end
+
+      def strict_union_validate_existing_interrogation_methods!(variant_class)
+        @strict_union_variant_names.each_key do |variant_name|
+          existing_method = strict_union_interrogation_method(variant_name)
+          next if variant_class.instance_method(existing_method).owner.equal?(self)
+
+          raise ArgumentError, "interrogation method #{existing_method.inspect} already exists for #{variant_class}"
+        end
       end
 
       def strict_union_register_variant(name, tag, tag_key, constant_name, variant_class)
         const_set(constant_name, variant_class)
         @strict_union_variant_names[name] = variant_class
         @strict_union_variants[tag_key] = Variant.new(tag:, variant_class:)
+        define_singleton_method(name) { |**attributes| variant_class.new(**attributes) }
+        define_method(strict_union_interrogation_method(name)) { variant_class === self }
         variant_class
+      end
+
+      def strict_union_interrogation_method(name)
+        :"#{name}?"
+      end
+
+      def strict_union_method_defined?(owner, name)
+        owner.public_method_defined?(name) ||
+          owner.protected_method_defined?(name) ||
+          owner.private_method_defined?(name)
       end
 
       def strict_union_discriminator!
