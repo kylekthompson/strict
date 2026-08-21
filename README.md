@@ -71,6 +71,8 @@ class Employee < Person
 end
 ```
 
+A subclass can also redeclare an inherited attribute by its exact name. The subclass declaration replaces the inherited validator, coercer, and default without changing the parent or the attribute order.
+
 ### `Strict::Union`
 
 ```rb

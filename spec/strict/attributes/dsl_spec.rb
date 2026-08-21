@@ -73,11 +73,26 @@ RSpec.describe Strict::Attributes::Dsl do
       end.to raise_error(ArgumentError)
     end
 
-    it "rejects attributes inherited by the declaration" do
+    it "redefines attributes inherited by the declaration in place" do
+      inherited = Strict::Attribute.make(:foo, String)
+
+      configuration = described_class.run(attributes: [inherited]) do
+        foo Integer
+        bar String
+      end
+
+      expect(configuration.map(&:name)).to eq(%i[foo bar])
+      expect(configuration.named!(:foo).validator).to eq(Integer)
+    end
+
+    it "rejects repeated redefinitions in one declaration" do
       inherited = Strict::Attribute.make(:foo, String)
 
       expect do
-        described_class.run(attributes: [inherited]) { foo Integer }
+        described_class.run(attributes: [inherited]) do
+          foo Integer
+          foo Numeric
+        end
       end.to raise_error(ArgumentError)
     end
 

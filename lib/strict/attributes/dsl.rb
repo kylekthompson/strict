@@ -18,15 +18,19 @@ module Strict
 
       def initialize(attributes:)
         @__strict_dsl_internal_attributes = attributes.to_h { |attribute| [attribute.name, attribute] }
+        @__strict_dsl_internal_inherited_attributes = @__strict_dsl_internal_attributes.dup
       end
 
       def strict_attribute(*, **)
         attribute = ::Strict::Attribute.make(*, **)
-        if __strict_dsl_internal_attributes.key?(attribute.name)
+        name = attribute.name
+        existing_attribute = __strict_dsl_internal_attributes[name]
+        inherited_attribute = @__strict_dsl_internal_inherited_attributes[name]
+        if existing_attribute && !existing_attribute.equal?(inherited_attribute)
           ::Kernel.raise ::ArgumentError, "Attribute #{attribute.name.inspect} is already declared"
         end
 
-        __strict_dsl_internal_attributes[attribute.name] = attribute
+        __strict_dsl_internal_attributes[name] = attribute
         nil
       end
 

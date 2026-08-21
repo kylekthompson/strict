@@ -26,7 +26,7 @@ module Strict
           definition ||= -> {}
           inherited_attributes = target.respond_to?(:strict_attributes) ? target.strict_attributes.to_a : []
           configuration = Strict::Attributes::Dsl.run(attributes: inherited_attributes, &definition)
-          declared_attributes = configuration.attributes.drop(inherited_attributes.length)
+          declared_attributes = configuration.to_a - inherited_attributes
           generated_methods = new(
             configuration,
             writable: writable,
