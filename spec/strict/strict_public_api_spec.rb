@@ -176,6 +176,10 @@ RSpec.describe Strict do
       end.to raise_error(ArgumentError)
 
       expect do
+        Class.new(parent_class) { attributes { name? Boolean() } }
+      end.to raise_error(ArgumentError, /Attribute :name\? conflicts with :name/)
+
+      expect do
         parent_class.attributes { employee_id String }
       end.to raise_error(ArgumentError)
     end

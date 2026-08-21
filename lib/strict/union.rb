@@ -127,19 +127,17 @@ module Strict
       def strict_union_validate_attributes!(attributes, discriminator)
         return unless discriminator && attributes
 
-        discriminator_instance_variable = Attribute.instance_variable_for(discriminator)
-        conflicting_attribute = attributes.find do |attribute|
-          attribute.instance_variable.eql?(discriminator_instance_variable)
-        end
+        storage = Attribute.instance_variable_for(discriminator)
+        conflicting_attribute = attributes.find { |attribute| attribute.instance_variable.eql?(storage) }
         return unless conflicting_attribute
 
-        unless conflicting_attribute.name.eql?(discriminator)
-          raise ArgumentError,
-                "union attributes cannot conflict with discriminator #{discriminator.inspect}: " \
-                "#{conflicting_attribute.name.inspect} uses #{discriminator_instance_variable}"
+        if conflicting_attribute.name.eql?(discriminator)
+          raise ArgumentError, "union attributes cannot redeclare discriminator #{discriminator.inspect}"
         end
 
-        raise ArgumentError, "union attributes cannot redeclare discriminator #{discriminator.inspect}"
+        raise ArgumentError,
+              "union attributes cannot conflict with discriminator #{discriminator.inspect}: " \
+              "#{conflicting_attribute.name.inspect} uses #{storage}"
       end
 
       def strict_union_discriminator_coercer(discriminator, tag)

@@ -4,7 +4,7 @@ module Strict
   class Attribute < Declaration
     class << self
       def instance_variable_for(name)
-        "@#{name.to_s.delete_suffix("?").delete_suffix("!")}"
+        "@#{name.to_s.delete_suffix('?').delete_suffix('!')}"
       end
 
       private

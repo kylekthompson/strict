@@ -36,13 +36,12 @@ RSpec.describe Strict::Attributes::Configuration do
 
   it "rejects attributes that use the same backing instance variable" do
     attributes = [
-      Strict::Attribute.make(:value),
       Strict::Attribute.make(:value?),
       Strict::Attribute.make(:value!)
     ]
 
     expect do
       described_class.new(attributes: attributes)
-    end.to raise_error(ArgumentError, /Attribute :value\? conflicts with :value/)
+    end.to raise_error(ArgumentError, /Attribute :value! conflicts with :value\?/)
   end
 end
