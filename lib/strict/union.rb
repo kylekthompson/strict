@@ -125,9 +125,19 @@ module Strict
       # rubocop:enable Metrics/MethodLength
 
       def strict_union_validate_attributes!(attributes, discriminator)
-        return unless discriminator && attributes&.any? { |attribute| attribute.name.eql?(discriminator) }
+        return unless discriminator && attributes
 
-        raise ArgumentError, "union attributes cannot redeclare discriminator #{discriminator.inspect}"
+        storage = Attribute.instance_variable_for(discriminator)
+        conflicting_attribute = attributes.find { |attribute| attribute.instance_variable.eql?(storage) }
+        return unless conflicting_attribute
+
+        if conflicting_attribute.name.eql?(discriminator)
+          raise ArgumentError, "union attributes cannot redeclare discriminator #{discriminator.inspect}"
+        end
+
+        raise ArgumentError,
+              "union attributes cannot conflict with discriminator #{discriminator.inspect}: " \
+              "#{conflicting_attribute.name.inspect} uses #{storage}"
       end
 
       def strict_union_discriminator_coercer(discriminator, tag)

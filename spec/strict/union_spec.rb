@@ -363,6 +363,29 @@ RSpec.describe Strict::Union do
     end.to raise_error(ArgumentError)
   end
 
+  it "rejects attributes that share backing storage across a composed variant" do
+    expect do
+      Class.new do
+        include Strict::Union
+
+        discriminator :kind
+        attributes { request_id String }
+        variant :invalid do
+          attributes { request_id? Boolean() }
+        end
+      end
+    end.to raise_error(ArgumentError, /Attribute :request_id\? conflicts with :request_id/)
+
+    expect do
+      Class.new do
+        include Strict::Union
+
+        attributes { kind? Boolean() }
+        discriminator :kind
+      end
+    end.to raise_error(ArgumentError, /union attributes cannot conflict with discriminator :kind/)
+  end
+
   it "rejects variant attributes that collide with variant methods" do
     expect do
       Class.new do

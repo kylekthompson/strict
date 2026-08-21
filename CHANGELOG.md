@@ -25,7 +25,7 @@
 - Forward validated interface calls directly to implementations and compile interface-conformance expectations once per interface definition.
 - Check interface implementation signatures by substitutability: require every exposed keyword and reject only additional parameters that can constrain a valid interface call.
 - Reduce value and object hot-path allocations during initialization, `to_h`, equality, and hashing.
-- Share declaration invariants between attributes and parameters, with isolated backing storage for every distinct attribute name.
+- Share declaration invariants between attributes and parameters, preserve conventional attribute backing instance variables, and reject attribute names that map to the same storage.
 - Automatically use a validator's coercer for attributes and parameters unless the declaration overrides or disables coercion.
 - Propagate default coercion through `ArrayOf` elements and `HashOf` keys and values.
 - Keep Strict configuration overrides in isolated internal execution-context storage to avoid collisions with application keys.

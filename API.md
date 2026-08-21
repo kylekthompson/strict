@@ -20,7 +20,7 @@ The former `extend Strict::Method` and `extend Strict::Interface` forms are not 
 
 `Strict::Value` and `Strict::Object` add an `attributes` declaration block. Each declaration accepts an attribute name, an optional validator, `coerce:`, and one of `default:`, `default_value:`, or `default_generator:`.
 
-Attribute names must be strings or symbols in the supported identifier shape: a lowercase ASCII letter or underscore, followed by ASCII letters, digits, or underscores, with one optional trailing `?` or `!`. Use `strict_attribute` when a name is a Ruby reserved word or already resolves to a method inside the declaration block, for example `strict_attribute :if` or `strict_attribute :format`. Empty names, operators, setters, and other method-name forms are rejected. Each distinct supported name has independent backing storage, including names that differ only by a trailing `?` or `!`. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
+Attribute names must be strings or symbols in the supported identifier shape: a lowercase ASCII letter or underscore, followed by ASCII letters, digits, or underscores, with one optional trailing `?` or `!`. Use `strict_attribute` when a name is a Ruby reserved word or already resolves to a method inside the declaration block, for example `strict_attribute :if` or `strict_attribute :format`. Empty names, operators, setters, and other method-name forms are rejected. Generated accessors use the conventional backing instance variable formed by removing a trailing `?` or `!` from the attribute name, so `active?` uses `@active`. Class behavior can read this declared state directly; writing it directly bypasses validation and is unsupported. A mutable object's punctuation writer can be called with `public_send`, for example `object.public_send(:"active?=", false)`.
 
 Both capabilities provide:
 
@@ -41,7 +41,7 @@ Both capabilities provide:
 - `==` and `eql?`, based on exact class and attribute values;
 - `hash`, consistent with `eql?`.
 
-A class can execute at most one `attributes` block, and an empty block counts as that one block. A subclass inherits its parent's attributes and can execute one additive `attributes` block without changing the parent. An attribute cannot duplicate another attribute in the same block or an inherited attribute.
+A class can execute at most one `attributes` block, and an empty block counts as that one block. A subclass inherits its parent's attributes and can execute one additive `attributes` block without changing the parent. An attribute cannot duplicate another attribute in the same block or an inherited attribute. Attribute names also cannot map to the same backing instance variable, such as `active`, `active?`, and `active!`, including across inherited declarations.
 
 Before it installs generated methods, Strict rejects an attribute whose reader would collide with a public, protected, or private instance method defined directly on the declaring class. It also rejects methods reserved by `BasicObject`, the active Strict capability, or Strict's generated implementation, including `as_json`, `class`, `to_h`, `inspect`, `hash`, `eql?`, `initialize`, `pretty_print`, and `public_send`. `Strict::Object` applies the same checks to its generated writer.
 
@@ -128,7 +128,7 @@ PaymentResult::Authorized.new(
 # => { status: "payment.authorized", request_id: "request_123", authorization_id: "auth_123", amount_in_cents: 1_000 }
 ```
 
-Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, pattern matching, and declaration errors. A variant attribute cannot duplicate the discriminator or a shared union attribute, and generated readers cannot collide with methods defined in the variant block. The union base cannot be instantiated directly.
+Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, pattern matching, and declaration errors. A variant attribute cannot duplicate or share a backing instance variable with the discriminator or a shared union attribute, and generated readers cannot collide with methods defined in the variant block. The union base cannot be instantiated directly.
 
 `PaymentResult === value` is true only when `value` has the exact class of a registered variant. Generated variant classes retain normal Ruby class matching, including matching instances of their subclasses. Union and variant inheritance are outside the compatibility boundary.
 
