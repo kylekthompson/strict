@@ -1,8 +1,10 @@
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-21
+
 ### Added
 
-- Define and characterize the supported next-major API in `API.md`, provide RBS signatures for that boundary, validate them in the default checks, and add repeatable timing and allocation benchmark tooling.
+- Define and characterize the supported 2.0 API in `API.md`, provide RBS signatures for that boundary, validate them in the default checks, and add repeatable timing and allocation benchmark tooling.
 - Add closed discriminated unions whose generated variants use `Strict::Value` for attributes and value behavior.
 - Add inherited value and object attribute declarations and shared union attributes.
 - Add structured validation violations with paths, codes, rejected values, and validators for assignment, initialization, signed method calls, and returns, plus an optional detailed-validator protocol for custom nested failures.
@@ -11,14 +13,14 @@
 
 ### Breaking changes
 
-- Standardize all four capabilities on `include`: `Strict::Value`, `Strict::Object`, `Strict::Method`, and `Strict::Interface`. The legacy `extend Strict::Method` and `extend Strict::Interface` forms are outside the supported next-major API.
+- Standardize all four capabilities on `include`: `Strict::Value`, `Strict::Object`, `Strict::Method`, and `Strict::Interface`. The legacy `extend Strict::Method` and `extend Strict::Interface` forms are outside the supported 2.0 API.
 - Make signed method returns validate-only. `returns` rejects coercion options, validates the original result, and preserves its identity for the caller.
 - Reject malformed or same-block duplicate attribute declarations, repeated attribute blocks, duplicate or repeated signatures, and same-class or Strict/core-reserved generated attribute method collisions with `ArgumentError` instead of silently replacing declarations or installing pathological methods.
 
 ### Changed
 
 - Require Ruby 3.3 or newer and test against all maintained Ruby releases.
-- Update runtime and development dependencies to their latest release lines.
+- Update development dependencies to their latest release lines while retaining Zeitwerk 2.x compatibility from 2.6 onward.
 - Compile signed-method invocation metadata once, reuse unchanged call arguments, and consolidate generated wrappers by owner.
 - Preserve validated explicit keywords when keyrest processing changes a signed call.
 - Forward validated interface calls directly to implementations and compile interface-conformance expectations once per interface definition.
@@ -100,7 +102,8 @@ The equal-weight geometric mean of the eight after/before timing ratios is 0.57,
 
 - Start initial development.
 
-[Unreleased]: https://github.com/kylekthompson/strict/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/kylekthompson/strict/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/kylekthompson/strict/compare/v1.5.0...v2.0.0
 [1.5.0]: https://github.com/kylekthompson/strict/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/kylekthompson/strict/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/kylekthompson/strict/compare/v1.3.0...v1.3.1
