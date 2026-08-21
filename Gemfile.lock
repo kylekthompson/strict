@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     strict (2.0.0)
-      zeitwerk (~> 2.8)
+      zeitwerk (~> 2.6)
 
 GEM
   remote: https://rubygems.org/

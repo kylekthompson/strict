@@ -20,7 +20,7 @@
 ### Changed
 
 - Require Ruby 3.3 or newer and test against all maintained Ruby releases.
-- Update runtime and development dependencies to their latest release lines.
+- Update development dependencies to their latest release lines while retaining Zeitwerk 2.x compatibility from 2.6 onward.
 - Compile signed-method invocation metadata once, reuse unchanged call arguments, and consolidate generated wrappers by owner.
 - Preserve validated explicit keywords when keyrest processing changes a signed call.
 - Forward validated interface calls directly to implementations and compile interface-conformance expectations once per interface definition.
