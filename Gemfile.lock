@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    strict (1.5.0)
+    strict (2.0.0)
       zeitwerk (~> 2.8)
 
 GEM

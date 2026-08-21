@@ -1,6 +1,6 @@
 # Supported API
 
-This document defines the compatibility boundary for Strict's next major release. Code inside this boundary is public API. Other reachable Ruby constants, methods, generated modules, and reflection details are implementation details unless this document identifies them as public.
+This document defines the compatibility boundary for Strict 2.0. Code inside this boundary is public API. Other reachable Ruby constants, methods, generated modules, and reflection details are implementation details unless this document identifies them as public.
 
 ## Capabilities
 
