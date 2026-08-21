@@ -116,10 +116,12 @@ There is no default discriminator. A union can declare zero or one `attributes` 
 
 A variant name must be a lower snake-case string or symbol, and Strict generates its PascalCase nested subclass. By default, the discriminator tag is the name's corresponding symbol. The optional `tag:` can assign a different string or symbol. For example, `variant :requires_action, tag: "action-required"` generates `PaymentResult::RequiresAction < PaymentResult` with the tag `"action-required"`.
 
+Each variant name also generates a class-level convenience constructor and an instance interrogation method. `PaymentResult.authorized(...)` calls `PaymentResult::Authorized.new(...)`. Every union member responds to `authorized?`, which is true for authorized members and false for other variants. These methods use the variant name even when the discriminator tag differs.
+
 The variant block configures the generated subclass. It can include modules, define methods, and contain zero or one `attributes` block. Strict combines the discriminator, shared union attributes, and variant attributes in that order. The discriminator is an implicit first attribute with a fixed default value:
 
 ```ruby
-PaymentResult::Authorized.new(
+PaymentResult.authorized(
   request_id: "request_123",
   authorization_id: "auth_123",
   amount_in_cents: 1_000
@@ -127,7 +129,7 @@ PaymentResult::Authorized.new(
 # => { status: "payment.authorized", request_id: "request_123", authorization_id: "auth_123", amount_in_cents: 1_000 }
 ```
 
-Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, pattern matching, and declaration errors. A variant attribute cannot duplicate or share a backing instance variable with the discriminator or a shared union attribute, and generated readers cannot collide with methods defined in the variant block. The union base cannot be instantiated directly.
+Variants therefore use the documented `Strict::Value` behavior for initialization, validation, coercion, defaults, copying, equality, hashing, conversion, inspection, pattern matching, and declaration errors. A variant attribute cannot duplicate or share a backing instance variable with the discriminator or a shared union attribute, and generated readers cannot collide with methods defined in the variant block. Generated convenience constructors and interrogation methods cannot collide with existing class or instance methods or with variant behavior. The union base cannot be instantiated directly.
 
 `PaymentResult === value` is true only when `value` has the exact class of a registered variant. Generated variant classes retain normal Ruby class matching, including matching instances of their subclasses. Union and variant inheritance are outside the compatibility boundary.
 
@@ -147,7 +149,7 @@ payment_result PaymentResult
 strict_payment_result PaymentResult, coerce: false
 ```
 
-Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid variant name or tag, replacing an existing generated constant, declaring multiple union or variant attribute blocks, declaring union attributes after a variant, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
+Declaring a discriminator more than once, declaring equivalent duplicate string or symbol tags, using an invalid or conflicting variant name or tag, replacing an existing generated constant, declaring multiple union or variant attribute blocks, declaring union attributes after a variant, or redeclaring the discriminator raises `ArgumentError`. Declaration return values, generated-class reflection details, and the exact text of declaration and coercion errors are outside the compatibility boundary.
 
 ### Signed methods
 

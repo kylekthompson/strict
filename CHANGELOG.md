@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-21
+
+### Added
+
+- Add class-level convenience constructors and instance interrogation methods for every `Strict::Union` variant.
+
 ## [2.0.0] - 2026-08-20
 
 ### Added
@@ -102,7 +108,8 @@ The equal-weight geometric mean of the eight after/before timing ratios is 0.57,
 
 - Start initial development.
 
-[Unreleased]: https://github.com/kylekthompson/strict/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/kylekthompson/strict/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/kylekthompson/strict/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/kylekthompson/strict/compare/v1.5.0...v2.0.0
 [1.5.0]: https://github.com/kylekthompson/strict/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/kylekthompson/strict/compare/v1.3.1...v1.4.0
