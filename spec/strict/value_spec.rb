@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "open3"
 require "spec_helper"
 
 RSpec.describe Strict::Value do
@@ -143,6 +144,50 @@ RSpec.describe Strict::Value do
     instance = build(:value)
 
     expect(instance.to_h).to eq(foo: 1, bar: "2", baz: "3")
+  end
+
+  it "turns into a JSON representation of its attributes" do
+    instance = build(:value)
+
+    expect(instance.as_json).to eq(foo: 1, bar: "2", baz: "3")
+  end
+
+  it "uses Active Support's hash serialization when it is available" do
+    lib = File.expand_path("../../lib", __dir__)
+    script = <<~'RUBY'
+      require "active_support"
+      require "active_support/json"
+      require "active_support/core_ext/object/json"
+      require "strict"
+
+      value_class = Class.new do
+        include Strict::Value
+
+        attributes do
+          occurred_at Anything()
+          metadata Hash
+          secret String
+        end
+
+        def to_h = { overridden: true }
+      end
+      value = value_class.new(
+        occurred_at: Time.utc(2026, 8, 21),
+        metadata: { source: :api },
+        secret: "hidden"
+      )
+      expected = {
+        "occurred_at" => "2026-08-21T00:00:00.000Z",
+        "metadata" => { "source" => "api" }
+      }
+      actual = value.as_json(except: :secret)
+      abort "expected #{expected.inspect}, got #{actual.inspect}" unless actual == expected
+    RUBY
+
+    output, status = Open3.capture2e(RbConfig.ruby, "-I#{lib}", "-e", script)
+
+    expect(output).to be_empty
+    expect(status).to be_success
   end
 
   it "does not use an overridden hash conversion for its own behavior" do

@@ -23,6 +23,7 @@ module Strict
 
   interface _AttributesInstance
     def to_h: () -> Hash[Symbol, untyped]
+    def as_json: (?untyped options) -> Hash[Symbol | String, untyped]
     def inspect: () -> String
     def pretty_print: (untyped printer) -> untyped
   end

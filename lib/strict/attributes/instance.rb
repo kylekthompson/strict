@@ -62,6 +62,11 @@ module Strict
         Instance.attribute_values(self)
       end
 
+      def as_json(options = nil)
+        attributes = Instance.attribute_values(self)
+        attributes.respond_to?(:as_json) ? attributes.as_json(options) : attributes
+      end
+
       def inspect
         if self.class.strict_attributes.any?
           attributes = Instance.attribute_values(self)
