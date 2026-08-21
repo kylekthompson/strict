@@ -3,6 +3,10 @@
 module Strict
   class Attribute < Declaration
     class << self
+      def instance_variable_for(name)
+        "@#{name.to_s.delete_suffix("?").delete_suffix("!")}"
+      end
+
       private
 
       def coercer_supported?(coercer)
@@ -14,7 +18,7 @@ module Strict
 
     def initialize(name:, validator:, default_generator:, coercer:)
       super
-      @instance_variable = :"@__strict_attribute_#{self.name.to_s.b.unpack1('H*')}"
+      @instance_variable = self.class.instance_variable_for(self.name)
     end
 
     def coerce(value, for_class:)

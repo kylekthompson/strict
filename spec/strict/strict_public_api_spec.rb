@@ -108,22 +108,34 @@ RSpec.describe Strict do
       expect(value_with_overridden_reader.hash).to eq(equal_value.hash)
     end
 
-    it "stores attribute names with the same stem independently" do
+    it "makes conventional backing instance variables available to custom behavior" do
       value_class = Class.new do
         include Strict::Value
 
         attributes do
-          strict_attribute :value, String
-          strict_attribute :value?, Integer
-          strict_attribute :value!, Symbol
+          name String
+          active? Boolean()
         end
-      end
-      value = value_class.new(value: "plain", value?: 1, value!: :dangerous)
 
-      expect(value.value).to eq("plain")
-      expect(value.value?).to eq(1)
-      expect(value.value!).to eq(:dangerous)
-      expect(value.to_h).to eq(value: "plain", value?: 1, value!: :dangerous)
+        def state = [@name, @active]
+      end
+      value = value_class.new(name: "Ada", active?: true)
+
+      expect(value.state).to eq(["Ada", true])
+      expect(value.instance_variables).to contain_exactly(:@name, :@active)
+    end
+
+    it "rejects attribute names that use the same backing instance variable" do
+      expect do
+        Class.new do
+          include Strict::Value
+
+          attributes do
+            strict_attribute :value, String
+            strict_attribute :value?, Integer
+          end
+        end
+      end.to raise_error(ArgumentError, /Attribute :value\? conflicts with :value/)
     end
 
     it "rejects invalid attribute declarations before installing methods" do
@@ -195,28 +207,24 @@ RSpec.describe Strict do
       end.to raise_error(Strict::AssignmentError) { |error| expect(error.value).to eq("no") }
     end
 
-    it "stores attribute names with the same stem independently" do
+    it "updates conventional backing instance variables through validated writers" do
       object_class = Class.new do
         include Strict::Object
 
         attributes do
-          strict_attribute :value, String
-          strict_attribute :value?, Integer
-          strict_attribute :value!, Symbol
+          name String
+          active? Boolean()
         end
+
+        def state = [@name, @active]
       end
-      object = object_class.new(value: "plain", value?: 1, value!: :dangerous)
+      object = object_class.new(name: "Ada", active?: true)
 
-      expect(object.to_h).to eq(value: "plain", value?: 1, value!: :dangerous)
+      object.name = "Grace"
+      object.public_send(:"active?=", false)
 
-      object.value = "changed"
-      object.public_send(:"value?=", 2)
-      object.public_send(:"value!=", :changed)
-
-      expect(object.value).to eq("changed")
-      expect(object.value?).to eq(2)
-      expect(object.value!).to eq(:changed)
-      expect(object.to_h).to eq(value: "changed", value?: 2, value!: :changed)
+      expect(object.state).to eq(["Grace", false])
+      expect(object.instance_variables).to contain_exactly(:@name, :@active)
     end
 
     it "inherits writers and resolves class coercers on the receiving class" do
