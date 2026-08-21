@@ -8,6 +8,7 @@
 - Add structured validation violations with paths, codes, rejected values, and validators for assignment, initialization, signed method calls, and returns, plus an optional detailed-validator protocol for custom nested failures.
 - Add opt-in RSpec matchers, verifying doubles, and nested matcher placeholders for Strict values and validations.
 - Add `implemented_by?` and `verify_implementation!` to check interface adapters without constructing an interface.
+- Add Rails-compatible `as_json` serialization for values, objects, and union variants.
 
 ### Breaking changes
 

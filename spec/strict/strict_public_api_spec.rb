@@ -54,7 +54,7 @@ RSpec.describe Strict do
       value = value_class.new(**attributes)
       equal_value = value_class.new(**attributes)
 
-      expect(value.to_h).to eq(
+      expected_attributes = {
         **attributes,
         count: 1,
         symbol_coerced: "2",
@@ -63,7 +63,9 @@ RSpec.describe Strict do
         generated_default: 1,
         callable_value: callable_value,
         explicit_generator: "generated"
-      )
+      }
+      expect(value.to_h).to eq(expected_attributes)
+      expect(value.as_json).to eq(expected_attributes)
       expect(value.public_send(:if)).to eq("yes")
       expect(value.active?).to be(true)
       expect(value).to eq(equal_value)
@@ -135,6 +137,7 @@ RSpec.describe Strict do
             name Integer
           end
         end,
+        -> { attributes { as_json Hash } },
         -> { attributes { to_h Hash } }
       ]
 
