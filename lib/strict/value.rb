@@ -7,11 +7,11 @@ module Strict
     end
 
     def with(**attributes)
-      self.class.new(**to_h, **attributes)
+      self.class.new(**Attributes::Instance.attribute_values(self), **attributes)
     end
 
     def deconstruct_keys(keys)
-      attributes = to_h
+      attributes = Attributes::Instance.attribute_values(self)
       keys ? attributes.slice(*keys) : attributes
     end
 

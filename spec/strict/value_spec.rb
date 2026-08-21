@@ -145,6 +145,25 @@ RSpec.describe Strict::Value do
     expect(instance.to_h).to eq(foo: 1, bar: "2", baz: "3")
   end
 
+  it "does not use an overridden hash conversion for its own behavior" do
+    instance = build(:value)
+    instance.define_singleton_method(:to_h) { { overridden: true } }
+    output = StringIO.new
+
+    PP.pp(instance, output, 5)
+
+    expect(instance.to_h).to eq(overridden: true)
+    expect(instance.with(foo: 2)).to eq(build(:value, foo: 2))
+    expect(instance.deconstruct_keys(nil)).to eq(foo: 1, bar: "2", baz: "3")
+    expect(instance.inspect).to eq("#<ValueClass foo=1 bar=\"2\" baz=\"3\">")
+    expect(output.string).to eq(<<~OUTPUT)
+      #<ValueClass
+       foo=1
+       bar="2"
+       baz="3">
+    OUTPUT
+  end
+
   it "deconstructs attributes for pattern matching" do
     instance = build(:value)
 

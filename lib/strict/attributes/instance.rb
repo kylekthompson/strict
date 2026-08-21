@@ -3,6 +3,12 @@
 module Strict
   module Attributes
     module Instance
+      def self.attribute_values(instance)
+        instance.class.strict_attributes.to_h do |attribute|
+          [attribute.name, instance.public_send(attribute.name)]
+        end
+      end
+
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       def initialize(**attributes)
         initializable_class = self.class
@@ -53,16 +59,13 @@ module Strict
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
       def to_h
-        values = {}
-        self.class.strict_attributes.each do |attribute|
-          values[attribute.name] = public_send(attribute.name)
-        end
-        values
+        Instance.attribute_values(self)
       end
 
       def inspect
         if self.class.strict_attributes.any?
-          "#<#{self.class} #{to_h.map { |key, value| "#{key}=#{value.inspect}" }.join(' ')}>"
+          attributes = Instance.attribute_values(self)
+          "#<#{self.class} #{attributes.map { |key, value| "#{key}=#{value.inspect}" }.join(' ')}>"
         else
           "#<#{self.class}>"
         end
@@ -70,7 +73,7 @@ module Strict
 
       def pretty_print(pp)
         pp.object_group(self) do
-          to_h.each do |key, value|
+          Instance.attribute_values(self).each do |key, value|
             pp.breakable
             pp.text("#{key}=")
             pp.pp(value)
