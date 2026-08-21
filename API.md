@@ -28,7 +28,6 @@ Both capabilities provide:
 - declared readers;
 - coercion before validation;
 - `to_h`, with symbol keys in declaration order;
-- `as_json(options = nil)`, which applies Active Support's hash serialization when available and otherwise returns declared attributes with symbol keys in declaration order;
 - a meaningful `inspect` and pretty-print representation, without a fixed formatting contract;
 - class methods `strict_attributes` and `coercer`.
 
@@ -43,7 +42,7 @@ Both capabilities provide:
 
 A class can execute at most one `attributes` block, and an empty block counts as that one block. A subclass inherits its parent's attributes and can execute one additive `attributes` block without changing the parent. An attribute cannot duplicate another attribute in the same block or an inherited attribute. Attribute names also cannot map to the same backing instance variable, such as `active`, `active?`, and `active!`, including across inherited declarations.
 
-Before it installs generated methods, Strict rejects an attribute whose reader would collide with a public, protected, or private instance method defined directly on the declaring class. It also rejects methods reserved by `BasicObject`, the active Strict capability, or Strict's generated implementation, including `as_json`, `class`, `to_h`, `inspect`, `hash`, `eql?`, `initialize`, `pretty_print`, and `public_send`. `Strict::Object` applies the same checks to its generated writer.
+Before it installs generated methods, Strict rejects an attribute whose reader would collide with a public, protected, or private instance method defined directly on the declaring class. It also rejects methods reserved by `BasicObject`, the active Strict capability, or Strict's generated implementation, including `class`, `to_h`, `inspect`, `hash`, `eql?`, `initialize`, `pretty_print`, and `public_send`. `Strict::Object` applies the same checks to its generated writer.
 
 An attribute can override an inherited public, protected, or private method from a superclass or a non-Strict included module. The generated reader or writer is public and replaces the inherited behavior; it does not wrap or validate calls to the inherited method. Strict does not police methods defined after the `attributes` block; later overrides remain unsupported. Duplicate attributes, repeated blocks, prohibited generated-method collisions, and invalid names or declaration options raise `ArgumentError` at declaration time.
 
