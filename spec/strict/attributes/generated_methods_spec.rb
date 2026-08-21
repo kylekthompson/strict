@@ -36,6 +36,22 @@ RSpec.describe Strict::Attributes::GeneratedMethods do
     end
   end
 
+  it "rejects redefined attributes that collide with subclass methods" do
+    parent_class = Class.new do
+      include Strict::Value
+
+      attributes { name String }
+    end
+
+    expect do
+      Class.new(parent_class) do
+        def name = "subclass method"
+
+        attributes { name Integer }
+      end
+    end.to raise_error(ArgumentError)
+  end
+
   it "allows generated readers to override inherited methods" do
     parent_class = Class.new do
       def tag(*) = "inherited tag"

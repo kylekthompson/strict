@@ -30,6 +30,28 @@ RSpec.describe Strict::Object do
     expect(parent_class.strict_attributes.map(&:name)).to eq([:name])
   end
 
+  it "uses redefined attributes for subclass assignment without changing the parent" do
+    parent_class = Class.new do
+      include Strict::Object
+
+      attributes { value String }
+    end
+    child_class = Class.new(parent_class) do
+      attributes { value Integer }
+    end
+    parent = parent_class.new(value: "parent")
+    child = child_class.new(value: 1)
+
+    parent.value = "updated parent"
+    child.value = 2
+
+    expect(parent.value).to eq("updated parent")
+    expect(child.value).to eq(2)
+    expect do
+      child.value = "invalid"
+    end.to raise_error(Strict::AssignmentError)
+  end
+
   it "exposes writer methods" do
     instance = build(:strict_object)
     instance.foo = 2

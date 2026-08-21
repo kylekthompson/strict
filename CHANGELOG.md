@@ -13,7 +13,7 @@
 
 - Standardize all four capabilities on `include`: `Strict::Value`, `Strict::Object`, `Strict::Method`, and `Strict::Interface`. The legacy `extend Strict::Method` and `extend Strict::Interface` forms are outside the supported next-major API.
 - Make signed method returns validate-only. `returns` rejects coercion options, validates the original result, and preserves its identity for the caller.
-- Reject malformed, duplicate, or repeated attribute and signature declarations, plus same-class or Strict/core-reserved generated attribute method collisions, with `ArgumentError` instead of silently replacing declarations or installing pathological methods.
+- Reject malformed or same-block duplicate attribute declarations, repeated attribute blocks, duplicate or repeated signatures, and same-class or Strict/core-reserved generated attribute method collisions with `ArgumentError` instead of silently replacing declarations or installing pathological methods.
 
 ### Changed
 
@@ -30,6 +30,7 @@
 - Keep Strict configuration overrides in isolated internal execution-context storage to avoid collisions with application keys.
 - Generate attribute readers and writers through one shared implementation, with mutable writers bound directly to their declarations.
 - Allow generated attribute readers and writers to override inherited public, protected, and private methods while continuing to reject same-class and Strict/core-reserved collisions.
+- Allow value and object subclasses to redefine inherited attributes without changing the parent or attribute order.
 - Return exact `Strict::Value` and `Strict::Object` instances unchanged from their class coercers while continuing to convert subclass instances.
 - Validate declaration names, explicit default generators, and capability-specific coercer forms before installing attributes or signatures.
 

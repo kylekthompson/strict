@@ -30,6 +30,33 @@ RSpec.describe Strict::Value do
     expect(person_class.strict_attributes.map(&:name)).to eq([:name])
   end
 
+  it "redefines inherited attributes without changing the parent" do
+    parent_class = Class.new do
+      include Strict::Value
+
+      attributes do
+        identifier String, default: "parent"
+        label String
+      end
+    end
+    child_class = Class.new(parent_class) do
+      attributes do
+        identifier Integer, coerce: ->(value) { Kernel.Integer(value) }
+        child_label String
+      end
+    end
+
+    parent = parent_class.new(label: "parent")
+    child = child_class.new(identifier: "123", label: "parent", child_label: "child")
+
+    expect(parent.identifier).to eq("parent")
+    expect(child.identifier).to eq(123)
+    expect(child.to_h.keys).to eq(%i[identifier label child_label])
+    expect do
+      child_class.new(label: "parent", child_label: "child")
+    end.to raise_error(Strict::InitializationError) { |error| expect(error.missing_attributes).to eq([:identifier]) }
+  end
+
   it "does not expose writer methods" do
     instance = build(:value)
 

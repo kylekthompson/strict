@@ -162,16 +162,18 @@ RSpec.describe Strict do
       end
     end
 
-    it "rejects repeated and inherited attribute declarations" do
+    it "redefines inherited attributes and rejects repeated declarations" do
       parent_class = Class.new do
         include Strict::Value
 
         attributes { name String }
       end
+      child_class = Class.new(parent_class) do
+        attributes { name Integer }
+      end
 
-      expect do
-        Class.new(parent_class) { attributes { name String } }
-      end.to raise_error(ArgumentError)
+      expect(child_class.new(name: 1).name).to eq(1)
+      expect(parent_class.new(name: "Ada").name).to eq("Ada")
 
       expect do
         Class.new(parent_class) { attributes { name? Boolean() } }
