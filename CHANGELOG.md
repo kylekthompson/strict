@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- Add class-level convenience constructors and instance interrogation methods for every `Strict::Union` variant.
+
 ## [2.0.0] - 2026-08-20
 
 ### Added

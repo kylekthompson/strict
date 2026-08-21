@@ -103,13 +103,19 @@ class PaymentResult
   end
 end
 
-authorized = PaymentResult::Authorized.new(
+authorized = PaymentResult.authorized(
   request_id: "request_123",
   authorization_id: "auth_123",
   amount_in_cents: 1_000
 )
 authorized.to_h
 # => { status: "payment.authorized", request_id: "request_123", authorization_id: "auth_123", amount_in_cents: 1_000 }
+
+authorized.authorized?
+# => true
+
+authorized.declined?
+# => false
 
 authorized.successful?
 # => true
